@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Stage, Layer, Circle, Line, Text, Group, Rect } from 'react-konva';
+import { calculateProfiles } from './profiles.js';
 
 const CANVAS_SIZE = 400;
 const DEFAULT_SCALE = 70; // 1 Meter = 70 Pixel
 const SNAP_THRESHOLD_PX = 6;
 const ANGLE_SNAP_THRESHOLD_DEG = 4;
+
 
 
 function getAngle(p0, p1, p2) {
@@ -78,6 +80,7 @@ const CanvasComponent = () => {
   const [errorMessage, setErrorMessage] = useState(''); // Fehlermeldung für gesperrte Kanten/Winkel
   const [cursorPos, setCursorPos] = useState(null);
   const [snapLines, setSnapLines] = useState([]);
+  const [showProfiles, setShowProfiles] = useState(true);
   const dragStartPoints = useRef(null);
 
   const getSnappedPos = (pos, allPoints, lastPoint) => {
@@ -583,6 +586,24 @@ const CanvasComponent = () => {
   // Flächenberechnung
   const polygonArea = calculatePolygonArea(points, scale);
 
+  // Bodenprofile-Berechnung
+  const profileData = useMemo(() => {
+    if (points.length < 3 || hauswandEdges.length === 0) {
+      return { profileDetails: [], profileCounts: {} };
+    }
+    
+    const hauswandIndex = hauswandEdges[0];
+    const wallP1 = points[hauswandIndex];
+    const wallP2 = points[(hauswandIndex + 1) % points.length];
+    
+    // Konvertiere Punkte zu Array-Format für calculateProfiles
+    const allPointsArray = points.map(p => [p.x, p.y]);
+    const wallP1Array = [wallP1.x, wallP1.y];
+    const wallP2Array = [wallP2.x, wallP2.y];
+    
+    return calculateProfiles(allPointsArray, wallP1Array, wallP2Array, scale);
+  }, [points, hauswandEdges, scale]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-4">
       {/* Top Panel - Settings */}
@@ -646,6 +667,16 @@ const CanvasComponent = () => {
                 />
                 <span className="text-xs font-medium text-gray-700">Snap aktiviert</span>
               </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={showProfiles} 
+                  onChange={(e) => setShowProfiles(e.target.checked)}
+                  className="w-3 h-3 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                />
+                <span className="text-xs font-medium text-gray-700">Bodenprofile anzeigen</span>
+              </label>
             </div>
             
             {/* Action Buttons */}
@@ -678,42 +709,27 @@ const CanvasComponent = () => {
             </h2>
             
             {points.length >= 3 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* Fläche */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-blue-600 text-sm">📐</span>
+              <div className="flex items-center gap-4">
+                {/* Fläche kompakt */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200 flex items-center gap-3">
+                  <span className="text-blue-600 text-lg">📐</span>
+                  <div>
                     <h3 className="text-xs font-medium text-blue-800">Fläche</h3>
+                    <p className="text-lg font-bold text-blue-900">{polygonArea.toFixed(2)} m²</p>
                   </div>
-                  <p className="text-xl font-bold text-blue-900">{polygonArea.toFixed(2)} m²</p>
                 </div>
                 
-                {/* Anzahl Punkte */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-green-600 text-sm">📍</span>
-                    <h3 className="text-xs font-medium text-green-800">Punkte</h3>
+                {/* Hauswand Status kompakt */}
+                {hauswandEdges.length > 0 && (
+                  <div className="text-xs text-gray-600 flex items-center gap-2">
+                    <span className="text-red-600">🏠</span>
+                    Hauswand: Kante {hauswandEdges[0] + 1}
                   </div>
-                  <p className="text-xl font-bold text-green-900">{points.length}</p>
-                </div>
-                
-                {/* Hauswand Info */}
-                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 border border-red-200">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-red-600 text-sm">🏠</span>
-                    <h3 className="text-xs font-medium text-red-800">Hauswand</h3>
-                  </div>
-                  <p className="text-xs text-red-900">
-                    {hauswandEdges.length > 0 ? 
-                      `Kante ${hauswandEdges[0] + 1} festgelegt` : 
-                      'Keine Hauswand festgelegt'
-                    }
-                  </p>
-                </div>
+                )}
               </div>
             ) : (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
-                <p className="text-gray-600 text-sm">Mindestens 3 Punkte erforderlich für Berechnung</p>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
+                <p className="text-gray-600 text-xs">Mindestens 3 Punkte erforderlich</p>
               </div>
             )}
           </div>
@@ -726,11 +742,12 @@ const CanvasComponent = () => {
           <span>💡</span>
           Bedienungshinweise
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-blue-700">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-blue-700">
           <p><strong>Punkte setzen:</strong> Klick auf Zeichenfläche</p>
           <p><strong>Längen bearbeiten:</strong> Klick auf grüne Angaben</p>
           <p><strong>Winkel bearbeiten:</strong> Klick auf violette Angaben</p>
           <p><strong>Hauswand setzen:</strong> Hover über Kante + Klick</p>
+          <p><strong>Bodenprofile:</strong> Automatisch nach Hauswand-Definition</p>
         </div>
       </div>
       
@@ -796,6 +813,48 @@ const CanvasComponent = () => {
               <Layer>
                 {gridLines}
               </Layer>
+              
+              {/* Bodenprofile Layer - im Hintergrund */}
+              {showProfiles && profileData.profileDetails.length > 0 && (
+                <Layer>
+                  {profileData.profileDetails.map((profile, index) => (
+                    <Group key={`profile-${index}`}>
+                      {/* Vollständige Diele (hellgrau) */}
+                      <Line
+                        points={profile.full.flat()}
+                        closed={true}
+                        fill="rgba(200, 200, 200, 0.3)"
+                        stroke="#888"
+                        strokeWidth={1}
+                      />
+                      
+                      {/* Benötigter Teil (grün) */}
+                      <Line
+                        points={profile.used.flat()}
+                        closed={true}
+                        fill="rgba(34, 197, 94, 0.4)"
+                        stroke="#16a34a"
+                        strokeWidth={2}
+                      />
+                      
+                      {/* Längenangabe */}
+                      <Text
+                        x={(profile.used[0][0] + profile.used[1][0]) / 2}
+                        y={(profile.used[0][1] + profile.used[2][1]) / 2}
+                        text={`${profile.chosenLengthMM}mm`}
+                        fontSize={9}
+                        fill="#16a34a"
+                        fontStyle="bold"
+                        align="center"
+                        verticalAlign="middle"
+                        offsetX={15}
+                        offsetY={5}
+                      />
+                    </Group>
+                  ))}
+                </Layer>
+              )}
+              
               <Layer>
                 {points.length > 1 && (
                   <>
@@ -1118,6 +1177,30 @@ const CanvasComponent = () => {
               </div>
             )}
           </div>
+          
+          {/* Einkaufsliste */}
+          {points.length >= 3 && hauswandEdges.length > 0 && profileData.profileCounts && Object.keys(profileData.profileCounts).length > 0 && (
+            <div className="w-48 bg-orange-50 rounded-lg border border-orange-200 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
+                  <span className="text-orange-600">🛒</span>
+                  Einkaufsliste
+                </h3>
+              </div>
+              <div className="text-xs text-orange-700">
+                <div className="font-medium mb-2">Bodenprofile 140mm breit:</div>
+                <div className="space-y-1 max-h-80 overflow-y-auto">
+                  {Object.entries(profileData.profileCounts)
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([length, count]) => (
+                      <div key={length} className="bg-white rounded p-2">
+                        <div className="font-medium text-orange-800">{count}x {length}mm</div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
