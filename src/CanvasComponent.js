@@ -40,7 +40,10 @@ const CanvasComponent = () => {
   const [editingEdge, setEditingEdge] = useState(null); // Index der zu bearbeitenden Kante
   const [editingLength, setEditingLength] = useState(''); // Eingabefeld für neue Länge
   const [lockedEdges, setLockedEdges] = useState(new Set()); // Set der gesperrten Kanten
-  const [errorMessage, setErrorMessage] = useState(''); // Fehlermeldung für gesperrte Kanten
+  const [editingAngle, setEditingAngle] = useState(null); // Index des zu bearbeitenden Winkels
+  const [editingAngleValue, setEditingAngleValue] = useState(''); // Eingabefeld für neuen Winkel
+  const [lockedAngles, setLockedAngles] = useState(new Set()); // Set der gesperrten Winkel
+  const [errorMessage, setErrorMessage] = useState(''); // Fehlermeldung für gesperrte Kanten/Winkel
   
 
   const handleStageClick = (e) => {
@@ -64,6 +67,11 @@ const CanvasComponent = () => {
   const handleLengthClick = (edgeIndex, currentLength) => {
     setEditingEdge(edgeIndex);
     setEditingLength(currentLength);
+  };
+
+  const handleAngleClick = (angleIndex, currentAngle) => {
+    setEditingAngle(angleIndex);
+    setEditingAngleValue(currentAngle);
   };
 
   const handleLengthChange = (newLength) => {
@@ -143,6 +151,123 @@ const CanvasComponent = () => {
     setEditingLength('');
   };
 
+  const handleAngleChange = (newAngle) => {
+    if (editingAngle === null || !newAngle || isNaN(newAngle)) return;
+    
+    const angleIndex = editingAngle;
+    const angleValue = parseFloat(newAngle);
+    
+    // Winkel muss zwischen 1 und 179 Grad liegen (keine 0° oder 180°)
+    if (angleValue <= 0 || angleValue >= 180) {
+      setErrorMessage('Winkel muss zwischen 1° und 179° liegen!');
+      setTimeout(() => setErrorMessage(''), 3000);
+      return;
+    }
+    
+    // Finde die beiden angrenzenden Kanten des Winkels
+    const prevEdgeIndex = (angleIndex - 1 + points.length) % points.length;
+    const nextEdgeIndex = angleIndex;
+    
+    const isPrevEdgeLocked = lockedEdges.has(prevEdgeIndex);
+    const isNextEdgeLocked = lockedEdges.has(nextEdgeIndex);
+    
+    // Prüfe ob beide angrenzende Kanten gesperrt sind
+    if (isPrevEdgeLocked && isNextEdgeLocked) {
+      setErrorMessage('Winkel kann nicht bearbeitet werden - beide angrenzenden Kanten sind gesperrt!');
+      setTimeout(() => setErrorMessage(''), 3000);
+      setEditingAngle(null);
+      setEditingAngleValue('');
+      return;
+    }
+    
+    const newPoints = [...points];
+    const currentPoint = points[angleIndex];
+    const prevPoint = points[(angleIndex - 1 + points.length) % points.length];
+    const nextPoint = points[(angleIndex + 1) % points.length];
+    
+    // Berechne die aktuellen Vektoren
+    const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
+    const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
+    
+    // Berechne die Längen der Vektoren
+    const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+    const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+    
+    // Berechne den aktuellen Winkel zwischen den Vektoren
+    const currentAngle = getAngle(prevPoint, currentPoint, nextPoint);
+    const angleDifference = angleValue - currentAngle;
+    
+    // Berechne die Rotation, die angewendet werden muss
+    const rotationRad = (angleDifference * Math.PI) / 180;
+    
+    if (isPrevEdgeLocked) {
+      // Vorherige Kante ist gesperrt - nur nextPoint bewegen
+      const cos = Math.cos(rotationRad);
+      const sin = Math.sin(rotationRad);
+      
+      // Rotiere v2 um den gewünschten Winkel
+      const newV2x = v2.x * cos - v2.y * sin;
+      const newV2y = v2.x * sin + v2.y * cos;
+      
+      newPoints[(angleIndex + 1) % points.length] = {
+        x: currentPoint.x + newV2x,
+        y: currentPoint.y + newV2y
+      };
+    } else if (isNextEdgeLocked) {
+      // Nächste Kante ist gesperrt - nur prevPoint bewegen
+      const cos = Math.cos(-rotationRad);
+      const sin = Math.sin(-rotationRad);
+      
+      // Rotiere v1 um den gewünschten Winkel (in entgegengesetzte Richtung)
+      const newV1x = v1.x * cos - v1.y * sin;
+      const newV1y = v1.x * sin + v1.y * cos;
+      
+      newPoints[(angleIndex - 1 + points.length) % points.length] = {
+        x: currentPoint.x + newV1x,
+        y: currentPoint.y + newV1y
+      };
+    } else {
+      // Keine Kanten sind gesperrt - beide Punkte proportional bewegen
+      const halfRotation = rotationRad / 2;
+      
+      // Rotiere v1 um die halbe gewünschte Rotation
+      const cos1 = Math.cos(-halfRotation);
+      const sin1 = Math.sin(-halfRotation);
+      const newV1x = v1.x * cos1 - v1.y * sin1;
+      const newV1y = v1.x * sin1 + v1.y * cos1;
+      
+      // Rotiere v2 um die halbe gewünschte Rotation
+      const cos2 = Math.cos(halfRotation);
+      const sin2 = Math.sin(halfRotation);
+      const newV2x = v2.x * cos2 - v2.y * sin2;
+      const newV2y = v2.x * sin2 + v2.y * cos2;
+      
+      newPoints[(angleIndex - 1 + points.length) % points.length] = {
+        x: currentPoint.x + newV1x,
+        y: currentPoint.y + newV1y
+      };
+      
+      newPoints[(angleIndex + 1) % points.length] = {
+        x: currentPoint.x + newV2x,
+        y: currentPoint.y + newV2y
+      };
+    }
+    
+    setPoints(newPoints);
+    
+    // Sperre diesen Winkel
+    setLockedAngles(prev => new Set([...prev, angleIndex]));
+    
+    // Beende die Bearbeitung
+    setEditingAngle(null);
+    setEditingAngleValue('');
+  };
+
+  const handleAngleCancel = () => {
+    setEditingAngle(null);
+    setEditingAngleValue('');
+  };
+
   const handleLengthCancel = () => {
     setEditingEdge(null);
     setEditingLength('');
@@ -156,9 +281,18 @@ const CanvasComponent = () => {
     });
   };
 
+  const handleUnlockAngle = (angleIndex) => {
+    setLockedAngles(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(angleIndex);
+      return newSet;
+    });
+  };
+
   const checkIfMoveAllowed = (pointIndex, newX, newY) => {
-    // Überprüfe, ob die Bewegung eines Punktes gesperrte Kanten beeinflusst
+    // Überprüfe, ob die Bewegung eines Punktes gesperrte Kanten oder Winkel beeinflusst
     const affectedEdges = [];
+    const affectedAngles = [];
     
     // Ein Punkt ist mit zwei Kanten verbunden:
     // 1. Die Kante, die von diesem Punkt ausgeht (Index = pointIndex)
@@ -175,18 +309,45 @@ const CanvasComponent = () => {
       affectedEdges.push(incomingEdgeIndex);
     }
     
-    return affectedEdges;
+    // Ein Punkt ist auch der Scheitelpunkt eines Winkels
+    if (lockedAngles.has(pointIndex)) {
+      affectedAngles.push(pointIndex);
+    }
+    
+    // Ein Punkt ist auch Teil der beiden angrenzenden Winkel
+    const prevAngleIndex = (pointIndex - 1 + points.length) % points.length;
+    const nextAngleIndex = (pointIndex + 1) % points.length;
+    
+    if (lockedAngles.has(prevAngleIndex)) {
+      affectedAngles.push(prevAngleIndex);
+    }
+    
+    if (lockedAngles.has(nextAngleIndex)) {
+      affectedAngles.push(nextAngleIndex);
+    }
+    
+    return { edges: affectedEdges, angles: affectedAngles };
   };
 
   const handleDragMove = (e, idx) => {
     let { x, y } = e.target.position();
 
-    // Überprüfe, ob die Bewegung gesperrte Kanten beeinflusst
-    const affectedLockedEdges = checkIfMoveAllowed(idx, x, y);
+    // Überprüfe, ob die Bewegung gesperrte Kanten oder Winkel beeinflusst
+    const affected = checkIfMoveAllowed(idx, x, y);
     
-    if (affectedLockedEdges.length > 0) {
+    if (affected.edges.length > 0 || affected.angles.length > 0) {
       // Bewegung nicht erlaubt - zeige Fehlermeldung
-      setErrorMessage(`Punkt kann nicht bewegt werden - Kante ${affectedLockedEdges[0] + 1} ist gesperrt!`);
+      let message = 'Punkt kann nicht bewegt werden - ';
+      if (affected.edges.length > 0) {
+        message += `Kante ${affected.edges[0] + 1} ist gesperrt`;
+      }
+      if (affected.angles.length > 0) {
+        if (affected.edges.length > 0) message += ' und ';
+        message += `Winkel ${affected.angles[0] + 1} ist gesperrt`;
+      }
+      message += '!';
+      
+      setErrorMessage(message);
       setTimeout(() => setErrorMessage(''), 3000);
       
       // Setze den Punkt auf seine ursprüngliche Position zurück
@@ -309,14 +470,30 @@ const CanvasComponent = () => {
             }}
             disabled={lockedEdges.size === 0}
           >
-            Alle Sperren aufheben ({lockedEdges.size})
+            Alle Kanten-Sperren aufheben ({lockedEdges.size})
+          </button>
+          <button
+            onClick={() => setLockedAngles(new Set())}
+            style={{
+              marginLeft: '10px',
+              backgroundColor: '#9c27b0',
+              color: 'white',
+              border: 'none',
+              padding: '5px 10px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+            disabled={lockedAngles.size === 0}
+          >
+            Alle Winkel-Sperren aufheben ({lockedAngles.size})
           </button>
         </div>
         {/* Informationstext */}
         <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-          💡 Tipp: Klicken Sie auf die Längenangaben, um sie zu bearbeiten. Bearbeitete Längen werden automatisch gesperrt (🔒).
+          💡 Tipp: Klicken Sie auf die Längenangaben oder Winkel, um sie zu bearbeiten. Bearbeitete Werte werden automatisch gesperrt (🔒).
           <br />
-          Gesperrte Kanten (🔒) können durch erneutes Klicken entsperrt werden. Kanten mit 🚫 können nicht bearbeitet werden (beide angrenzenden Kanten gesperrt).
+          Gesperrte Kanten/Winkel (🔒) können durch erneutes Klicken entsperrt werden. Werte mit 🚫 können nicht bearbeitet werden (Konflikte mit anderen Sperren).
           <br />
           🏠 Hauswand: Klicken Sie auf eine Kante, um sie als Hauswand zu setzen (rot) oder zu entfernen.
         </div>
@@ -392,6 +569,77 @@ const CanvasComponent = () => {
             </button>
             <button
               onClick={handleLengthCancel}
+              style={{
+                backgroundColor: '#ccc',
+                color: 'black',
+                border: 'none',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Winkel-Bearbeitungsfeld */}
+      {editingAngle !== null && (
+        <div style={{
+          position: 'absolute',
+          top: '150px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'white',
+          border: '2px solid purple',
+          borderRadius: '8px',
+          padding: '15px',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+          zIndex: 1000
+        }}>
+          <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>
+            Neuen Winkel eingeben:
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <input
+              type="number"
+              value={editingAngleValue}
+              onChange={(e) => setEditingAngleValue(e.target.value)}
+              step="1"
+              min="1"
+              max="179"
+              style={{
+                padding: '5px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                width: '80px'
+              }}
+              autoFocus
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAngleChange(editingAngleValue);
+                } else if (e.key === 'Escape') {
+                  handleAngleCancel();
+                }
+              }}
+            />
+            <span>°</span>
+            <button
+              onClick={() => handleAngleChange(editingAngleValue)}
+              style={{
+                backgroundColor: 'purple',
+                color: 'white',
+                border: 'none',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              OK
+            </button>
+            <button
+              onClick={handleAngleCancel}
               style={{
                 backgroundColor: '#ccc',
                 color: 'black',
@@ -572,25 +820,70 @@ const CanvasComponent = () => {
             />
             {angles[i] !== undefined && (
               <Group>
-                {/* Schatten für Winkeltext */}
-                <Text
-                  x={point.x + 11}
-                  y={point.y - 19}
-                  text={`${angles[i]}°`}
-                  fontSize={12}
-                  fill="rgba(0,0,0,0.3)"
-                  fontFamily="Arial, sans-serif"
-                />
-                {/* Winkeltext */}
-                <Text
-                  x={point.x + 10}
-                  y={point.y - 20}
-                  text={`${angles[i]}°`}
-                  fontSize={12}
-                  fill="#374151"
-                  fontFamily="Arial, sans-serif"
-                  fontStyle="bold"
-                />
+                {/* Prüfe, ob dieser Winkel bearbeitbar ist */}
+                {(() => {
+                  const prevEdgeIndex = (i - 1 + points.length) % points.length;
+                  const nextEdgeIndex = i;
+                  const isPrevEdgeLocked = lockedEdges.has(prevEdgeIndex);
+                  const isNextEdgeLocked = lockedEdges.has(nextEdgeIndex);
+                  const isAngleLocked = lockedAngles.has(i);
+                  const isAngleEditable = !isAngleLocked && !(isPrevEdgeLocked && isNextEdgeLocked);
+                  
+                  return (
+                    <>
+                      {/* Hintergrund für Winkeltext */}
+                      <Rect
+                        x={point.x + 5}
+                        y={point.y - 25}
+                        width={40}
+                        height={16}
+                        fill={isAngleLocked ? "rgba(220,220,220,0.95)" : (!isAngleEditable ? "rgba(255,100,100,0.95)" : "rgba(255,255,255,0.95)")}
+                        stroke={isAngleLocked ? "#999" : (!isAngleEditable ? "#ff4444" : "#9c27b0")}
+                        strokeWidth={1}
+                        cornerRadius={5}
+                        onClick={(e) => {
+                          e.evt.stopPropagation();
+                          if (isAngleLocked) {
+                            handleUnlockAngle(i);
+                          } else if (isAngleEditable) {
+                            handleAngleClick(i, angles[i]);
+                          }
+                        }}
+                      />
+                      {/* Schatten für Winkeltext */}
+                      <Text
+                        x={point.x + 26}
+                        y={point.y - 19}
+                        text={isAngleLocked ? `🔒${angles[i]}°` : (!isAngleEditable ? `🚫${angles[i]}°` : `${angles[i]}°`)}
+                        fontSize={10}
+                        fill="rgba(0,0,0,0.3)"
+                        fontFamily="Arial, sans-serif"
+                        offsetX={isAngleLocked ? 20 : (!isAngleEditable ? 20 : 15)}
+                        offsetY={5}
+                      />
+                      {/* Winkeltext */}
+                      <Text
+                        x={point.x + 25}
+                        y={point.y - 20}
+                        text={isAngleLocked ? `🔒${angles[i]}°` : (!isAngleEditable ? `🚫${angles[i]}°` : `${angles[i]}°`)}
+                        fontSize={10}
+                        fill={isAngleLocked ? "#666" : (!isAngleEditable ? "white" : "#9c27b0")}
+                        fontFamily="Arial, sans-serif"
+                        fontStyle="bold"
+                        offsetX={isAngleLocked ? 20 : (!isAngleEditable ? 20 : 15)}
+                        offsetY={5}
+                        onClick={(e) => {
+                          e.evt.stopPropagation();
+                          if (isAngleLocked) {
+                            handleUnlockAngle(i);
+                          } else if (isAngleEditable) {
+                            handleAngleClick(i, angles[i]);
+                          }
+                        }}
+                      />
+                    </>
+                  );
+                })()}
               </Group>
             )}
           </div>
