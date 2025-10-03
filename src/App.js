@@ -1,5 +1,5 @@
 import React from 'react';
-import CanvasComponent from './CanvasComponent';
+import BalkonRechnerPage from './components/BalkonRechnerPage';
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
             Präzise Vermessung und Planung für Ihren Balkon
           </p>
         </div>
-        <CanvasComponent />
+        <BalkonRechnerPage />
       </div>
     </div>
   );
