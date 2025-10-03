@@ -18,7 +18,7 @@ const SettingsPanel = ({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Einstellungen</h2>
       <div className="space-y-4">
-        <div>
+        {/* <div>
           <label htmlFor="scale-slider" className="block text-sm font-medium text-gray-700">
             Maßstab
           </label>
@@ -43,7 +43,7 @@ const SettingsPanel = ({
               className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-accent/80 focus:border-transparent"
             />
           </div>
-        </div>
+        </div> */}
 
         <div className="space-y-2">
            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
@@ -83,13 +83,13 @@ const SettingsPanel = ({
           >
             Kanten entsperren ({lockedEdges.size})
           </button>
-          <button
+          {/* <button
             onClick={() => setLockedAngles(new Set())}
             disabled={lockedAngles.size === 0}
             className="w-full px-3 py-1.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-700 text-sm font-medium rounded-md transition-colors duration-200"
           >
             Winkel entsperren ({lockedAngles.size})
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

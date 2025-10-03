@@ -37,33 +37,40 @@ const BalkonRechnerPage = () => {
     };
 
     return (
-        <div className="flex justify-center items-start space-x-8">
-            {/* Main Content: Canvas and UI */}
-            <div className="flex-grow space-y-4">
-                <InfoPanel errorMessage={errorMessage} />
-                <div className='flex flex-row w-full gap-4'>
-                    <Canvas state={canvasState} handlers={canvasHandlers} />
-                     <ShoppingList profileData={profileData} />
+        <div className="space-y-4">
+            {/* Bedienungshinweise ganz oben */}
+            <InfoPanel errorMessage={errorMessage} />
+            
+            {/* Hauptinhalt: Einkaufsliste, Canvas, Sidebar */}
+            <div className="flex justify-center items-start space-x-6">
+                {/* Einkaufsliste links */}
+                <div className="w-64 flex-shrink-0">
+                    <ShoppingList profileData={profileData} />
                 </div>
-            </div>
 
-            {/* Sidebar */}
-            <div className="w-80 flex-shrink-0 space-y-4">
-                <SettingsPanel
-                    scale={scale} setScale={setScale}
-                    showLengths={showLengths} setShowLengths={setShowLengths}
-                    snapEnabled={snapEnabled} setSnapEnabled={setSnapEnabled}
-                    showProfiles={showProfiles} setShowProfiles={setShowProfiles}
-                    lockedEdges={lockedEdges} setLockedEdges={setLockedEdges}
-                    lockedAngles={lockedAngles} setLockedAngles={setLockedAngles}
-                />
-                {points.length >= 3 && <ResultsPanel polygonArea={polygonArea} />}
-                <PointsList
-                    points={points}
-                    scale={scale}
-                    handleDeletePoint={handleDeletePoint}
-                    handleClearAllPoints={handleClearAllPoints}
-                />
+                {/* Canvas in der Mitte */}
+                <div className="flex-grow flex justify-center">
+                    <Canvas state={canvasState} handlers={canvasHandlers} />
+                </div>
+
+                {/* Sidebar rechts */}
+                <div className="w-60 flex-shrink-0 space-y-4">
+                    <SettingsPanel
+                        scale={scale} setScale={setScale}
+                        showLengths={showLengths} setShowLengths={setShowLengths}
+                        snapEnabled={snapEnabled} setSnapEnabled={setSnapEnabled}
+                        showProfiles={showProfiles} setShowProfiles={setShowProfiles}
+                        lockedEdges={lockedEdges} setLockedEdges={setLockedEdges}
+                        lockedAngles={lockedAngles} setLockedAngles={setLockedAngles}
+                    />
+                    {points.length >= 3 && <ResultsPanel polygonArea={polygonArea} />}
+                    <PointsList
+                        points={points}
+                        scale={scale}
+                        handleDeletePoint={handleDeletePoint}
+                        handleClearAllPoints={handleClearAllPoints}
+                    />
+                </div>
             </div>
 
             {/* Modals */}

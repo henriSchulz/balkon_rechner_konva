@@ -12,13 +12,13 @@ const ShoppingList = ({ profileData }) => {
         <h3 className="text-lg font-semibold text-gray-900">
           Einkaufsliste
         </h3>
+      </div>
         <button
-          className="px-3 py-1 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors duration-200"
+          className="w-full mb-3 px-3 py-2 bg-accent hover:bg-accent/90 text-white text-md font-medium rounded-md transition-colors duration-200"
           onClick={handleAddToCart}
         >
           Zum Warenkorb
         </button>
-      </div>
       <div className="text-sm text-gray-700">
         <div className="font-medium mb-2 text-gray-800">Bodenprofile (140mm breit):</div>
         <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
