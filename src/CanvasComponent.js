@@ -605,194 +605,37 @@ const CanvasComponent = () => {
   }, [points, hauswandEdges, scale]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4">
-      {/* Top Panel - Settings */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Settings Section */}
-          <div className="lg:w-64">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="text-blue-500">⚙️</span>
-              Einstellungen
-            </h2>
-            
-            {/* Scale Control */}
-            <div className="space-y-2 mb-4">
-              <label className="block text-xs font-medium text-gray-700">
-                Maßstab (Pixel pro Meter)
-              </label>
+    <div className="flex justify-center items-start p-4 space-x-4">
+      {/* Main Content: Canvas and Controls */}
+      <div className="flex-grow">
+        {/* Instructions and Error Message */}
+        <div className="mb-4 space-y-2">
+          <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg shadow-md border border-blue-200 p-3">
+            <h3 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+              <span>💡</span>
+              Bedienungshinweise
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-blue-700">
+              <p><strong>Punkte setzen:</strong> Klick auf Zeichenfläche</p>
+              <p><strong>Längen bearbeiten:</strong> Klick auf grüne Angaben</p>
+              <p><strong>Winkel bearbeiten:</strong> Klick auf violette Angaben</p>
+              <p><strong>Hauswand setzen:</strong> Hover über Kante + Klick</p>
+              <p><strong>Bodenprofile:</strong> Automatisch nach Hauswand-Definition</p>
+            </div>
+          </div>
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <div className="flex items-center gap-2">
-                <input 
-                  type="range"
-                  value={scale} 
-                  onChange={(e) => setScale(Number(e.target.value))}
-                  min="10"
-                  max="200"
-                  step="5"
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                />
-                <input 
-                  type="number" 
-                  value={scale} 
-                  onChange={(e) => setScale(Number(e.target.value))}
-                  min="10"
-                  max="200"
-                  step="5"
-                  className="w-14 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <span className="text-red-500">⚠️</span>
+                <span className="text-red-700 text-sm font-medium">{errorMessage}</span>
               </div>
-              <p className="text-xs text-gray-500">
-                Aktuell: 1m = {scale}px, Grid = 1m
-              </p>
             </div>
-            
-            {/* Checkboxes */}
-            <div className="space-y-2 mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={showLengths} 
-                  onChange={(e) => setShowLengths(e.target.checked)}
-                  className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-xs font-medium text-gray-700">Längen anzeigen</span>
-              </label>
-              
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={snapEnabled} 
-                  onChange={(e) => setSnapEnabled(e.target.checked)}
-                  className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-xs font-medium text-gray-700">Snap aktiviert</span>
-              </label>
-              
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={showProfiles} 
-                  onChange={(e) => setShowProfiles(e.target.checked)}
-                  className="w-3 h-3 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                />
-                <span className="text-xs font-medium text-gray-700">Bodenprofile anzeigen</span>
-              </label>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="space-y-2">
-              <button
-                onClick={() => setLockedEdges(new Set())}
-                disabled={lockedEdges.size === 0}
-                className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200"
-              >
-                <span>🔓</span>
-                Kanten entsperren ({lockedEdges.size})
-              </button>
-              
-              <button
-                onClick={() => setLockedAngles(new Set())}
-                disabled={lockedAngles.size === 0}
-                className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200"
-              >
-                <span>🔓</span>
-                Winkel entsperren ({lockedAngles.size})
-              </button>
-            </div>
-          </div>
-          
-          {/* Results Section */}
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="text-green-500">📊</span>
-              Ergebnisse
-            </h2>
-            
-            {points.length >= 3 ? (
-              <div className="flex items-center gap-4">
-                {/* Fläche kompakt */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200 flex items-center gap-3">
-                  <span className="text-blue-600 text-lg">📐</span>
-                  <div>
-                    <h3 className="text-xs font-medium text-blue-800">Fläche</h3>
-                    <p className="text-lg font-bold text-blue-900">{polygonArea.toFixed(2)} m²</p>
-                  </div>
-                </div>
-                
-                {/* Hauswand Status kompakt */}
-                {hauswandEdges.length > 0 && (
-                  <div className="text-xs text-gray-600 flex items-center gap-2">
-                    <span className="text-red-600">🏠</span>
-                    Hauswand: Kante {hauswandEdges[0] + 1}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-center">
-                <p className="text-gray-600 text-xs">Mindestens 3 Punkte erforderlich</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Instructions Panel */}
-      <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg shadow-md border border-blue-200 p-3">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
-          <span>💡</span>
-          Bedienungshinweise
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-blue-700">
-          <p><strong>Punkte setzen:</strong> Klick auf Zeichenfläche</p>
-          <p><strong>Längen bearbeiten:</strong> Klick auf grüne Angaben</p>
-          <p><strong>Winkel bearbeiten:</strong> Klick auf violette Angaben</p>
-          <p><strong>Hauswand setzen:</strong> Hover über Kante + Klick</p>
-          <p><strong>Bodenprofile:</strong> Automatisch nach Hauswand-Definition</p>
-        </div>
-      </div>
-      
-      {/* Status Panel */}
-      {(lockedEdges.size > 0 || lockedAngles.size > 0) && (
-        <div className="bg-green-50/80 backdrop-blur-sm rounded-lg shadow-md border border-green-200 p-3">
-          <h3 className="text-sm font-semibold text-green-800 mb-2 flex items-center gap-2">
-            <span>🔒</span>
-            Gesperrte Elemente
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {lockedEdges.size > 0 && (
-              <p className="text-xs text-green-700">
-                <strong>Kanten:</strong> {Array.from(lockedEdges).map(i => i + 1).join(', ')}
-              </p>
-            )}
-            {lockedAngles.size > 0 && (
-              <p className="text-xs text-green-700">
-                <strong>Winkel:</strong> {Array.from(lockedAngles).map(i => i + 1).join(', ')}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Canvas Area */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <span className="text-green-500">📐</span>
-          Zeichenfläche
-        </h2>
-        
-        {/* Error Message */}
-        {errorMessage && (
-          <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-red-500">⚠️</span>
-              <span className="text-red-700 text-sm font-medium">{errorMessage}</span>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex gap-4">
-          {/* Canvas Container */}
-          <div className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-hidden inline-block">
+        {/* Canvas */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4 inline-block">
+          <div className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-hidden">
             <Stage 
               width={CANVAS_SIZE} 
               height={CANVAS_SIZE} 
@@ -838,18 +681,29 @@ const CanvasComponent = () => {
                       />
                       
                       {/* Längenangabe */}
-                      <Text
-                        x={(profile.used[0][0] + profile.used[1][0]) / 2}
-                        y={(profile.used[0][1] + profile.used[2][1]) / 2}
-                        text={`${profile.chosenLengthMM}mm`}
-                        fontSize={9}
-                        fill="#16a34a"
-                        fontStyle="bold"
-                        align="center"
-                        verticalAlign="middle"
-                        offsetX={15}
-                        offsetY={5}
-                      />
+                      {(() => {
+                        const p1 = profile.used[0];
+                        const p2 = profile.used[1];
+                        const p3 = profile.used[2];
+                        const angle = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
+                        const degrees = (angle * 180) / Math.PI;
+
+                        return (
+                          <Text
+                            x={(p1[0] + p3[0]) / 2}
+                            y={(p1[1] + p3[1]) / 2}
+                            text={`${profile.chosenLengthMM}mm`}
+                            fontSize={9}
+                            fill="#000"
+                            fontStyle="bold"
+                            align="center"
+                            verticalAlign="middle"
+                            rotation={degrees}
+                            offsetX={15}
+                            offsetY={4.5}
+                          />
+                        );
+                      })()}
                     </Group>
                   ))}
                 </Layer>
@@ -1132,80 +986,133 @@ const CanvasComponent = () => {
               </Layer>
             </Stage>
           </div>
-          
-          {/* Punkteliste */}
-          <div className="w-48 bg-gray-50 rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <span className="text-blue-500">📍</span>
-                Punkte ({points.length})
-              </h3>
-              {points.length > 0 && (
-                <button
-                  onClick={handleClearAllPoints}
-                  className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors duration-200"
-                  title="Alle Punkte löschen"
-                >
-                  🗑️ Alle
-                </button>
-              )}
-            </div>
-            {points.length > 0 ? (
-              <div className="space-y-1 max-h-80 overflow-y-auto">
-                {points.map((point, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white rounded p-2 text-xs">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-800">Punkt {index + 1}</div>
-                      <div className="text-gray-600">
-                        x: {pixelsToMeters(point.x, scale)}m, y: {pixelsToMeters(point.y, scale)}m
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDeletePoint(index)}
-                      disabled={points.length <= 3}
-                      className="ml-2 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs rounded transition-colors duration-200"
-                      title={points.length <= 3 ? "Mindestens 3 Punkte erforderlich" : "Punkt löschen"}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-xs text-gray-500 text-center py-4">
-                Keine Punkte vorhanden
-              </div>
-            )}
-          </div>
-          
-          {/* Einkaufsliste */}
-          {points.length >= 3 && hauswandEdges.length > 0 && profileData.profileCounts && Object.keys(profileData.profileCounts).length > 0 && (
-            <div className="w-48 bg-orange-50 rounded-lg border border-orange-200 p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
-                  <span className="text-orange-600">🛒</span>
-                  Einkaufsliste
-                </h3>
-              </div>
-              <div className="text-xs text-orange-700">
-                <div className="font-medium mb-2">Bodenprofile 140mm breit:</div>
-                <div className="space-y-1 max-h-80 overflow-y-auto">
-                  {Object.entries(profileData.profileCounts)
-                    .sort(([a], [b]) => Number(a) - Number(b))
-                    .map(([length, count]) => (
-                      <div key={length} className="bg-white rounded p-2">
-                        <div className="font-medium text-orange-800">{count}x {length}mm</div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Sidebar: All controls and lists */}
+      <div className="w-80 flex-shrink-0 space-y-4">
+        {/* Settings */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="text-blue-500">⚙️</span>
+            Einstellungen
+          </h2>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">Maßstab (Pixel pro Meter)</label>
+              <div className="flex items-center gap-2 mt-1">
+                <input type="range" value={scale} onChange={(e) => setScale(Number(e.target.value))} min="10" max="200" step="5" className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider" />
+                <input type="number" value={scale} onChange={(e) => setScale(Number(e.target.value))} min="10" max="200" step="5" className="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+                <input type="checkbox" checked={showLengths} onChange={(e) => setShowLengths(e.target.checked)} className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2" />
+                Längen anzeigen
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+                <input type="checkbox" checked={snapEnabled} onChange={(e) => setSnapEnabled(e.target.checked)} className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2" />
+                Snap aktiviert
+              </label>
+            </div>
+             <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+                <input type="checkbox" checked={showProfiles} onChange={(e) => setShowProfiles(e.target.checked)} className="w-3 h-3 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2" />
+                Bodenprofile anzeigen
+              </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setLockedEdges(new Set())} disabled={lockedEdges.size === 0} className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200">
+                <span>🔓</span> Kanten ({lockedEdges.size})
+              </button>
+              <button onClick={() => setLockedAngles(new Set())} disabled={lockedAngles.size === 0} className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200">
+                <span>🔓</span> Winkel ({lockedAngles.size})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Results */}
+        {points.length >= 3 && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+             <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-green-500">📊</span>
+              Ergebnisse
+            </h2>
+             <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200 flex items-center gap-3">
+                  <span className="text-blue-600 text-lg">📐</span>
+                  <div>
+                    <h3 className="text-xs font-medium text-blue-800">Fläche</h3>
+                    <p className="text-lg font-bold text-blue-900">{polygonArea.toFixed(2)} m²</p>
+                  </div>
+                </div>
+                {hauswandEdges.length > 0 && (
+                  <div className="text-xs text-gray-600 flex items-center gap-2">
+                    <span className="text-red-600">🏠</span>
+                    Hauswand: Kante {hauswandEdges[0] + 1}
+                  </div>
+                )}
+              </div>
+          </div>
+        )}
+
+        {/* Points List */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-blue-500">📍</span>
+              Punkte ({points.length})
+            </h3>
+            {points.length > 0 && (
+              <button onClick={handleClearAllPoints} className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors duration-200" title="Alle Punkte löschen">
+                🗑️ Alle
+              </button>
+            )}
+          </div>
+          {points.length > 0 ? (
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {points.map((point, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 rounded p-2 text-xs">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-800">Punkt {index + 1}</div>
+                    <div className="text-gray-600">
+                      x: {pixelsToMeters(point.x, scale)}m, y: {pixelsToMeters(point.y, scale)}m
+                    </div>
+                  </div>
+                  <button onClick={() => handleDeletePoint(index)} disabled={points.length <= 3} className="ml-2 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs rounded transition-colors duration-200" title={points.length <= 3 ? "Mindestens 3 Punkte erforderlich" : "Punkt löschen"}>
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500 text-center py-4">Keine Punkte vorhanden</div>
+          )}
+        </div>
+
+        {/* Shopping List */}
+        {points.length >= 3 && hauswandEdges.length > 0 && profileData.profileCounts && Object.keys(profileData.profileCounts).length > 0 && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-orange-200 p-4">
+            <h3 className="text-sm font-semibold text-orange-800 mb-2 flex items-center gap-2">
+              <span className="text-orange-600">🛒</span>
+              Einkaufsliste
+            </h3>
+            <div className="text-xs text-orange-700">
+              <div className="font-medium mb-2">Bodenprofile 140mm breit:</div>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {Object.entries(profileData.profileCounts)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .map(([length, count]) => (
+                    <div key={length} className="bg-orange-50 rounded p-2">
+                      <div className="font-medium text-orange-800">{count}x {length}mm</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       
-      {/* Editing Modals */}
-      {/* Längen-Bearbeitungsfeld */}
+      {/* Editing Modals (remain unchanged) */}
       {editingEdge !== null && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-green-500 rounded-lg p-4 shadow-2xl z-50">
           <div className="mb-3 font-semibold text-gray-800 text-sm">
@@ -1245,7 +1152,6 @@ const CanvasComponent = () => {
         </div>
       )}
       
-      {/* Winkel-Bearbeitungsfeld */}
       {editingAngle !== null && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-purple-500 rounded-lg p-4 shadow-2xl z-50">
           <div className="mb-3 font-semibold text-gray-800 text-sm">
