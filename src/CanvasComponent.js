@@ -480,292 +480,185 @@ const CanvasComponent = () => {
     : [];
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Kontrollpanel */}
-      <div style={{ 
-        marginBottom: '10px', 
-        padding: '10px', 
-        border: '1px solid #ccc', 
-        borderRadius: '5px',
-        backgroundColor: '#f9f9f9'
-      }}>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ marginRight: '10px' }}>
-            Maßstab (Pixel pro Meter):
-            <input 
-              type="number" 
-              value={scale} 
-              onChange={(e) => setScale(Number(e.target.value))}
-              min="10"
-              max="200"
-              step="5"
-              style={{ marginLeft: '5px', width: '80px' }}
-            />
-          </label>
-          <span style={{ marginLeft: '10px', fontSize: '12px', color: '#666' }}>
-            (Aktuell: 1m = {scale}px, Grid = 1m)
-          </span>
+    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+      {/* Left Panel - Controls */}
+      <div className="lg:w-80 space-y-6">
+        {/* Main Control Panel */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="text-blue-500">⚙️</span>
+            Einstellungen
+          </h2>
+          
+          {/* Scale Control */}
+          <div className="space-y-3 mb-6">
+            <label className="block text-sm font-medium text-gray-700">
+              Maßstab (Pixel pro Meter)
+            </label>
+            <div className="flex items-center gap-3">
+              <input 
+                type="range"
+                value={scale} 
+                onChange={(e) => setScale(Number(e.target.value))}
+                min="10"
+                max="200"
+                step="5"
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <input 
+                type="number" 
+                value={scale} 
+                onChange={(e) => setScale(Number(e.target.value))}
+                min="10"
+                max="200"
+                step="5"
+                className="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Aktuell: 1m = {scale}px, Grid = 1m
+            </p>
+          </div>
+          
+          {/* Checkboxes */}
+          <div className="space-y-3 mb-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={showLengths} 
+                onChange={(e) => setShowLengths(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span className="text-sm font-medium text-gray-700">Längen anzeigen</span>
+            </label>
+            
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={snapEnabled} 
+                onChange={(e) => setSnapEnabled(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span className="text-sm font-medium text-gray-700">Snap aktiviert</span>
+            </label>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => setLockedEdges(new Set())}
+              disabled={lockedEdges.size === 0}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <span>🔓</span>
+              Kanten-Sperren aufheben ({lockedEdges.size})
+            </button>
+            
+            <button
+              onClick={() => setLockedAngles(new Set())}
+              disabled={lockedAngles.size === 0}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <span>🔓</span>
+              Winkel-Sperren aufheben ({lockedAngles.size})
+            </button>
+          </div>
         </div>
-        <div>
-          <label>
-            <input 
-              type="checkbox" 
-              checked={showLengths} 
-              onChange={(e) => setShowLengths(e.target.checked)}
-              style={{ marginRight: '5px' }}
-            />
-            Längen anzeigen
-          </label>
-          <label style={{ marginLeft: '20px' }}>
-            <input 
-              type="checkbox" 
-              checked={snapEnabled} 
-              onChange={(e) => setSnapEnabled(e.target.checked)}
-              style={{ marginRight: '5px' }}
-            />
-            Snap aktiviert
-          </label>
-          <button
-            onClick={() => setLockedEdges(new Set())}
-            style={{
-              marginLeft: '20px',
-              backgroundColor: '#ff9800',
-              color: 'white',
-              border: 'none',
-              padding: '5px 10px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            disabled={lockedEdges.size === 0}
-          >
-            Alle Kanten-Sperren aufheben ({lockedEdges.size})
-          </button>
-          <button
-            onClick={() => setLockedAngles(new Set())}
-            style={{
-              marginLeft: '10px',
-              backgroundColor: '#9c27b0',
-              color: 'white',
-              border: 'none',
-              padding: '5px 10px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            disabled={lockedAngles.size === 0}
-          >
-            Alle Winkel-Sperren aufheben ({lockedAngles.size})
-          </button>
+        
+        {/* Instructions Panel */}
+        <div className="bg-blue-50/80 backdrop-blur-sm rounded-xl shadow-lg border border-blue-200 p-6">
+          <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
+            <span>💡</span>
+            Bedienungshinweise
+          </h3>
+          <div className="space-y-2 text-sm text-blue-700">
+            <p><strong>Punkte setzen:</strong> Klicken Sie auf die Zeichenfläche</p>
+            <p><strong>Längen bearbeiten:</strong> Klicken Sie auf die grünen Längenangaben</p>
+            <p><strong>Winkel bearbeiten:</strong> Klicken Sie auf die violetten Winkelangaben</p>
+            <p><strong>Hauswand setzen:</strong> Hovern Sie über eine Kante und klicken Sie</p>
+            <p><strong>Punkte bewegen:</strong> Ziehen Sie die blauen Punkte</p>
+          </div>
         </div>
-        {/* Informationstext */}
-        <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-          💡 Tipp: Klicken Sie auf die Längenangaben oder Winkel, um sie zu bearbeiten. Bearbeitete Werte werden automatisch gesperrt (🔒).
-          <br />
-          Gesperrte Kanten/Winkel (🔒) können durch erneutes Klicken entsperrt werden. Werte mit 🚫 können nicht bearbeitet werden (Konflikte mit anderen Sperren).
-          <br />
-          🏠 Hauswand: Klicken Sie auf eine Kante, um sie als Hauswand zu setzen (rot) oder zu entfernen.
-        </div>
+        
+        {/* Status Panel */}
+        {(lockedEdges.size > 0 || lockedAngles.size > 0) && (
+          <div className="bg-green-50/80 backdrop-blur-sm rounded-xl shadow-lg border border-green-200 p-6">
+            <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-2">
+              <span>🔒</span>
+              Gesperrte Elemente
+            </h3>
+            {lockedEdges.size > 0 && (
+              <p className="text-sm text-green-700 mb-1">
+                <strong>Kanten:</strong> {Array.from(lockedEdges).map(i => i + 1).join(', ')}
+              </p>
+            )}
+            {lockedAngles.size > 0 && (
+              <p className="text-sm text-green-700">
+                <strong>Winkel:</strong> {Array.from(lockedAngles).map(i => i + 1).join(', ')}
+              </p>
+            )}
+          </div>
+        )}
       </div>
       
-      {/* Fehlermeldung */}
-      {errorMessage && (
-        <div style={{
-          backgroundColor: '#ffebee',
-          border: '1px solid #f44336',
-          borderRadius: '4px',
-          padding: '10px',
-          marginBottom: '10px',
-          color: '#d32f2f',
-          fontWeight: 'bold'
-        }}>
-          ⚠️ {errorMessage}
-        </div>
-      )}
-      
-      {/* Längen-Bearbeitungsfeld */}
-      {editingEdge !== null && (
-        <div style={{
-          position: 'absolute',
-          top: '150px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'white',
-          border: '2px solid green',
-          borderRadius: '8px',
-          padding: '15px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-          zIndex: 1000
-        }}>
-          <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>
-            Neue Länge eingeben:
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input
-              type="number"
-              value={editingLength}
-              onChange={(e) => setEditingLength(e.target.value)}
-              step="0.1"
-              min="0.1"
-              style={{
-                padding: '5px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                width: '80px'
-              }}
-              autoFocus
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleLengthChange(editingLength);
-                } else if (e.key === 'Escape') {
-                  handleLengthCancel();
+      {/* Right Panel - Canvas Area */}
+      <div className="flex-1">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="text-green-500">📐</span>
+            Zeichenfläche
+          </h2>
+          
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-red-500">⚠️</span>
+                <span className="text-red-700 font-medium">{errorMessage}</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Canvas Container */}
+          <div className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-hidden">
+            <Stage 
+              width={CANVAS_SIZE} 
+              height={CANVAS_SIZE} 
+              onClick={handleStageClick}
+              onMouseMove={(e) => {
+                const stage = e.target.getStage();
+                const pos = stage.getPointerPosition();
+                if (snapEnabled && points.length > 0) {
+                  const lastPoint = points[points.length - 1];
+                  const snappedPos = getSnappedPos(pos, points, lastPoint);
+                  setCursorPos(snappedPos);
+                } else {
+                  setCursorPos(pos);
                 }
               }}
-            />
-            <span>m</span>
-            <button
-              onClick={() => handleLengthChange(editingLength)}
-              style={{
-                backgroundColor: 'green',
-                color: 'white',
-                border: 'none',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              onMouseLeave={() => setCursorPos(null)}
             >
-              OK
-            </button>
-            <button
-              onClick={handleLengthCancel}
-              style={{
-                backgroundColor: '#ccc',
-                color: 'black',
-                border: 'none',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Abbrechen
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Winkel-Bearbeitungsfeld */}
-      {editingAngle !== null && (
-        <div style={{
-          position: 'absolute',
-          top: '150px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'white',
-          border: '2px solid purple',
-          borderRadius: '8px',
-          padding: '15px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-          zIndex: 1000
-        }}>
-          <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>
-            Neuen Winkel eingeben:
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input
-              type="number"
-              value={editingAngleValue}
-              onChange={(e) => setEditingAngleValue(e.target.value)}
-              step="1"
-              min="1"
-              max="179"
-              style={{
-                padding: '5px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                width: '80px'
-              }}
-              autoFocus
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleAngleChange(editingAngleValue);
-                } else if (e.key === 'Escape') {
-                  handleAngleCancel();
-                }
-              }}
-            />
-            <span>°</span>
-            <button
-              onClick={() => handleAngleChange(editingAngleValue)}
-              style={{
-                backgroundColor: 'purple',
-                color: 'white',
-                border: 'none',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              OK
-            </button>
-            <button
-              onClick={handleAngleCancel}
-              style={{
-                backgroundColor: '#ccc',
-                color: 'black',
-                border: 'none',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Abbrechen
-            </button>
-          </div>
-        </div>
-      )}
-      
-      <Stage
-        width={CANVAS_SIZE}
-        height={CANVAS_SIZE}
-        style={{ border: '1px solid black', height: '700px', width: '700px' }}
-        onMouseDown={handleStageClick}
-        onMouseMove={(e) => {
-          const stage = e.target.getStage();
-          let pos = stage.getPointerPosition();
-          if (snapEnabled && points.length > 0) {
-            const lastPoint = points[points.length - 1];
-            pos = getSnappedPos(pos, points, lastPoint);
-          } else {
-            setSnapLines([]); // Clear snap lines if not snapping
-          }
-          setCursorPos(pos);
-        }}
-        onMouseLeave={() => {
-          setCursorPos(null);
-          setSnapLines([]); // Clear snap lines on leave
-        }}
-      >
-      <Layer>
-        {gridLines}
-      </Layer>
-      <Layer>
-        {points.length > 1 && (
-          <>
-            {/* Füllung */}
-            <Line
-              points={linePoints}
-              closed={true}
-              stroke="transparent"
-              strokeWidth={0}
-              fill="rgba(0,0,255,0.1)"
-            />
-            {/* Einzelne Kanten für Hover-Effekt */}
-            {points.map((point, i) => {
-              const nextPoint = points[(i + 1) % points.length];
-              const isHovered = hoveredEdgeIndex === i;
-              const isHauswand = hauswandEdges.includes(i);
-              const isLocked = lockedEdges.has(i);
-              const midX = (point.x + nextPoint.x) / 2;
+              <Layer>
+                {gridLines}
+              </Layer>
+              <Layer>
+                {points.length > 1 && (
+                  <>
+                    {/* Füllung */}
+                    <Line
+                      points={linePoints}
+                      closed={true}
+                      stroke="transparent"
+                      strokeWidth={0}
+                      fill="rgba(0,0,255,0.1)"
+                    />
+                    {/* Einzelne Kanten für Hover-Effekt */}
+                    {points.map((point, i) => {
+                      const nextPoint = points[(i + 1) % points.length];
+                      const isHovered = hoveredEdgeIndex === i;
+                      const isHauswand = hauswandEdges.includes(i);
+                      const isLocked = lockedEdges.has(i);
+                      const midX = (point.x + nextPoint.x) / 2;
               const midY = (point.y + nextPoint.y) / 2;
               const distance = getDistance(point, nextPoint);
               const lengthInMeters = pixelsToMeters(distance, scale);
@@ -1019,8 +912,93 @@ const CanvasComponent = () => {
             )}
           </Group>
         ))}
-      </Layer>
-    </Stage>
+              </Layer>
+            </Stage>
+          </div>
+        </div>
+      </div>
+      
+      {/* Editing Modals */}
+      {/* Längen-Bearbeitungsfeld */}
+      {editingEdge !== null && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-green-500 rounded-xl p-6 shadow-2xl z-50">
+          <div className="mb-4 font-semibold text-gray-800">
+            Neue Länge eingeben:
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={editingLength}
+              onChange={(e) => setEditingLength(e.target.value)}
+              step="0.1"
+              min="0.1"
+              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              autoFocus
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleLengthChange(editingLength);
+                } else if (e.key === 'Escape') {
+                  handleLengthCancel();
+                }
+              }}
+            />
+            <span className="text-gray-600">m</span>
+            <button
+              onClick={() => handleLengthChange(editingLength)}
+              className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-md transition-colors duration-200"
+            >
+              OK
+            </button>
+            <button
+              onClick={handleLengthCancel}
+              className="px-3 py-2 bg-gray-400 hover:bg-gray-500 text-white font-medium rounded-md transition-colors duration-200"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Winkel-Bearbeitungsfeld */}
+      {editingAngle !== null && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-purple-500 rounded-xl p-6 shadow-2xl z-50">
+          <div className="mb-4 font-semibold text-gray-800">
+            Neuen Winkel eingeben:
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={editingAngleValue}
+              onChange={(e) => setEditingAngleValue(e.target.value)}
+              step="1"
+              min="1"
+              max="179"
+              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              autoFocus
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAngleChange(editingAngleValue);
+                } else if (e.key === 'Escape') {
+                  handleAngleCancel();
+                }
+              }}
+            />
+            <span className="text-gray-600">°</span>
+            <button
+              onClick={() => handleAngleChange(editingAngleValue)}
+              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-md transition-colors duration-200"
+            >
+              OK
+            </button>
+            <button
+              onClick={handleAngleCancel}
+              className="px-3 py-2 bg-gray-400 hover:bg-gray-500 text-white font-medium rounded-md transition-colors duration-200"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
