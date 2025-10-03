@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Stage, Layer, Circle, Line, Text, Group, Rect } from 'react-konva';
 import { calculateProfiles } from './profiles.js';
 
-const CANVAS_SIZE = 400;
+const CANVAS_SIZE = 500;
 const DEFAULT_SCALE = 70; // 1 Meter = 70 Pixel
 const SNAP_THRESHOLD_PX = 6;
 const ANGLE_SNAP_THRESHOLD_DEG = 4;
@@ -634,6 +634,7 @@ const CanvasComponent = () => {
         </div>
 
         {/* Canvas */}
+        <div className='flex flex-row w-full gap-2'>
         <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4 inline-block">
           <div className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-hidden">
             <Stage 
@@ -922,74 +923,102 @@ const CanvasComponent = () => {
                   const isAngleLocked = lockedAngles.has(i);
                   const isAngleEditable = !isAngleLocked && !(isPrevEdgeLocked && isNextEdgeLocked);
                   
-                  return (
+                    // Verbesserte Winkelplatzierung: Positioniere den Winkeltext mittig zwischen den drei Punkten und leicht nach außen
+                    const prev = points[(i - 1 + points.length) % points.length];
+                    const next = points[(i + 1) % points.length];
+
+                    // Mittelpunkt des Winkels (aktueller Punkt)
+                    const cx = point.x;
+                    const cy = point.y;
+
+                    // Richtung: Mittelwert der Richtungen zu prev und next
+                    const dirPrev = Math.atan2(prev.y - cy, prev.x - cx);
+                    const dirNext = Math.atan2(next.y - cy, next.x - cx);
+                    // Mittelrichtung (für "nach außen" zeigen)
+                    let avgDir = (dirPrev + dirNext) / 2;
+                    // Korrigiere falls über 180° springt
+                    if (Math.abs(dirPrev - dirNext) > Math.PI) {
+                    avgDir += Math.PI;
+                    }
+
+                    // Abstand vom Punkt für die Anzeige
+                    const radius = 22;
+                    const textX = cx + Math.cos(avgDir) * radius;
+                    const textY = cy + Math.sin(avgDir) * radius;
+
+                    // Textrotation: Zeige immer lesbar (nicht auf dem Kopf)
+                    let degrees = (avgDir * 180) / Math.PI;
+                    if (degrees > 90 || degrees < -90) degrees += 180;
+
+                    return (
                     <>
-                      {/* Hintergrund für Winkeltext */}
-                      <Rect
-                        x={point.x + 5}
-                        y={point.y - 25}
-                        width={40}
-                        height={16}
-                        fill={isAngleLocked ? "rgba(220,220,220,0.95)" : (!isAngleEditable ? "rgba(255,100,100,0.95)" : "rgba(255,255,255,0.95)")}
-                        stroke={isAngleLocked ? "#999" : (!isAngleEditable ? "#ff4444" : "#9c27b0")}
-                        strokeWidth={1}
-                        cornerRadius={5}
-                        onClick={(e) => {
-                          
-                          e.evt.stopPropagation();
-                          if (isAngleLocked) {
-                            handleUnlockAngle(i);
-                          } else if (isAngleEditable) {
-                            handleAngleClick(i, angles[i]);
-                          }
-                        }}
-                      />
-                      {/* Schatten für Winkeltext */}
+                      {/* Winkeltext mit besserer Platzierung */}
                       <Text
-                        x={point.x + 26}
-                        y={point.y - 19}
-                        text={isAngleLocked ? `🔒${angles[i]}°` : (!isAngleEditable ? `🚫${angles[i]}°` : `${angles[i]}°`)}
-                        fontSize={10}
-                        fill="rgba(0,0,0,0.3)"
-                        fontFamily="Arial, sans-serif"
-                        offsetX={isAngleLocked ? 20 : (!isAngleEditable ? 20 : 15)}
-                        offsetY={5}
-                      />
-                      {/* Winkeltext */}
-                      <Text
-                        x={point.x + 25}
-                        y={point.y - 20}
-                        text={isAngleLocked ? `🔒${angles[i]}°` : (!isAngleEditable ? `🚫${angles[i]}°` : `${angles[i]}°`)}
-                        fontSize={10}
-                        fill={isAngleLocked ? "#666" : (!isAngleEditable ? "white" : "#9c27b0")}
-                        fontFamily="Arial, sans-serif"
-                        fontStyle="bold"
-                        offsetX={isAngleLocked ? 20 : (!isAngleEditable ? 20 : 15)}
-                        offsetY={5}
-                        onClick={(e) => {
-                          return;
-                          e.evt.stopPropagation();
-                          if (isAngleLocked) {
-                            handleUnlockAngle(i);
-                          } else if (isAngleEditable) {
-                            handleAngleClick(i, angles[i]);
-                          }
-                        }}
+                      x={textX}
+                      y={textY}
+                      text={isAngleLocked ? `🔒${angles[i]}°` : (!isAngleEditable ? `🚫${angles[i]}°` : `${angles[i]}°`)}
+                      fontSize={10}
+                      fill={isAngleLocked ? "#666" : (!isAngleEditable ? "white" : "#9c27b0")}
+                      fontFamily="Arial, sans-serif"
+                      fontStyle="bold"
+                      offsetX={18}
+                      offsetY={5}
+                      rotation={degrees}
+                      onClick={(e) => {
+                        e.evt.stopPropagation();
+                        if (isAngleLocked) {
+                        handleUnlockAngle(i);
+                        } else if (isAngleEditable) {
+                        handleAngleClick(i, angles[i]);
+                        }
+                      }}
                       />
                     </>
-                  );
+                    );
                 })()}
+                </Group>
+              )}
               </Group>
+            ))}
+                </Layer>
+              </Stage>
+             
+              </div>
+            </div>
+             {points.length >= 3 && hauswandEdges.length > 0 && profileData.profileCounts && Object.keys(profileData.profileCounts).length > 0 && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-orange-200 p-4 w-full">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
+                <span className="text-orange-600">🛒</span>
+                Einkaufsliste
+                </h3>
+                <button
+                className="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded transition-colors duration-200"
+                onClick={() => {
+                  // TODO: Implement add all to card logic here
+                  alert('Alle Profile zur Karte hinzugefügt!');
+                }}
+                >
+                Zum Warenkorb hinzufügen
+                </button>
+              </div>
+              <div className="text-xs text-orange-700">
+                <div className="font-medium mb-2">Bodenprofile 140mm breit:</div>
+                <div className="space-y-1 overflow-y-auto">
+                {Object.entries(profileData.profileCounts)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .map(([length, count]) => (
+                  <div key={length} className="bg-orange-50 rounded p-2">
+                    <div className="font-medium text-orange-800">{count}x {length}mm</div>
+                  </div>
+                  ))}
+                </div>
+              </div>
+              </div>
             )}
-          </Group>
-        ))}
-              </Layer>
-            </Stage>
-          </div>
-        </div>
-      </div>
-
-      {/* Sidebar: All controls and lists */}
+            </div>
+            
+            </div>
       <div className="w-80 flex-shrink-0 space-y-4">
         {/* Settings */}
         <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
@@ -1090,26 +1119,7 @@ const CanvasComponent = () => {
         </div>
 
         {/* Shopping List */}
-        {points.length >= 3 && hauswandEdges.length > 0 && profileData.profileCounts && Object.keys(profileData.profileCounts).length > 0 && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-orange-200 p-4">
-            <h3 className="text-sm font-semibold text-orange-800 mb-2 flex items-center gap-2">
-              <span className="text-orange-600">🛒</span>
-              Einkaufsliste
-            </h3>
-            <div className="text-xs text-orange-700">
-              <div className="font-medium mb-2">Bodenprofile 140mm breit:</div>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {Object.entries(profileData.profileCounts)
-                  .sort(([a], [b]) => Number(a) - Number(b))
-                  .map(([length, count]) => (
-                    <div key={length} className="bg-orange-50 rounded p-2">
-                      <div className="font-medium text-orange-800">{count}x {length}mm</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-        )}
+       
       </div>
       
       {/* Editing Modals (remain unchanged) */}
