@@ -875,8 +875,9 @@ const CanvasComponent = () => {
                     dash={[5, 5]}
                   />
                   <Text
-                    x={cursorPos.x + 10}
+                    x={cursorPos.x + 20}
                     y={cursorPos.y}
+                    zIndex={-10}
                     text={`${lengthInMeters} m / ${degrees.toFixed(1)}°`}
                     fontSize={12}
                     fill="#333"
@@ -942,7 +943,7 @@ const CanvasComponent = () => {
                     }
 
                     // Abstand vom Punkt für die Anzeige
-                    const radius = 22;
+                    const radius = 30;
                     const textX = cx + Math.cos(avgDir) * radius;
                     const textY = cy + Math.sin(avgDir) * radius;
 
@@ -985,7 +986,7 @@ const CanvasComponent = () => {
              
               </div>
             </div>
-             {points.length >= 3 && hauswandEdges.length > 0 && profileData.profileCounts && Object.keys(profileData.profileCounts).length > 0 && (
+             
               <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-orange-200 p-4 w-full">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
@@ -1015,7 +1016,7 @@ const CanvasComponent = () => {
                 </div>
               </div>
               </div>
-            )}
+            
             </div>
             
             </div>
@@ -1066,20 +1067,15 @@ const CanvasComponent = () => {
               <span className="text-green-500">📊</span>
               Ergebnisse
             </h2>
-             <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200 flex items-center gap-3">
+            
+                <div className="w-full bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200 flex items-center gap-3">
                   <span className="text-blue-600 text-lg">📐</span>
                   <div>
                     <h3 className="text-xs font-medium text-blue-800">Fläche</h3>
                     <p className="text-lg font-bold text-blue-900">{polygonArea.toFixed(2)} m²</p>
                   </div>
-                </div>
-                {hauswandEdges.length > 0 && (
-                  <div className="text-xs text-gray-600 flex items-center gap-2">
-                    <span className="text-red-600">🏠</span>
-                    Hauswand: Kante {hauswandEdges[0] + 1}
-                  </div>
-                )}
+              
+               
               </div>
           </div>
         )}
