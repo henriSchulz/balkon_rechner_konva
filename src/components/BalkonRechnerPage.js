@@ -55,14 +55,14 @@ const BalkonRechnerPage = () => {
 
                 {/* Sidebar rechts */}
                 <div className="w-60 flex-shrink-0 space-y-4">
-                    <SettingsPanel
+                    {/* <SettingsPanel
                         scale={scale} setScale={setScale}
                         showLengths={showLengths} setShowLengths={setShowLengths}
                         snapEnabled={snapEnabled} setSnapEnabled={setSnapEnabled}
                         showProfiles={showProfiles} setShowProfiles={setShowProfiles}
                         lockedEdges={lockedEdges} setLockedEdges={setLockedEdges}
                         lockedAngles={lockedAngles} setLockedAngles={setLockedAngles}
-                    />
+                    /> */}
                     {points.length >= 3 && <ResultsPanel polygonArea={polygonArea} />}
                     <PointsList
                         points={points}
