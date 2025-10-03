@@ -26,6 +26,7 @@ const InteractionLayer = ({
           stroke={line.type === 'axis' ? 'rgba(255, 0, 0, 0.5)' : 'rgba(0, 255, 0, 0.5)'}
           strokeWidth={1}
           dash={line.type === 'axis' ? [4, 4] : [2, 2]}
+          listening={false} // Verhindert, dass die Linien auf Klicks reagieren
         />
       ))}
 
