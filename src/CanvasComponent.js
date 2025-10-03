@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Stage, Layer, Circle, Line, Text, Group, Rect } from 'react-konva';
 
-const GRID_SIZE = 50;
-const CANVAS_SIZE = 700;
-const DEFAULT_SCALE = 50; // 1 Meter = 50 Pixel
+const CANVAS_SIZE = 400;
+const DEFAULT_SCALE = 70; // 1 Meter = 70 Pixel
 const SNAP_THRESHOLD_PX = 6;
 const ANGLE_SNAP_THRESHOLD_DEG = 4;
 
@@ -11,11 +10,22 @@ const ANGLE_SNAP_THRESHOLD_DEG = 4;
 function getAngle(p0, p1, p2) {
   const v1 = { x: p0.x - p1.x, y: p0.y - p1.y };
   const v2 = { x: p2.x - p1.x, y: p2.y - p1.y };
+  
   const dot = v1.x * v2.x + v1.y * v2.y;
   const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
   const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
-  const angleRad = Math.acos(dot / (mag1 * mag2));
-  return Math.round((angleRad * 180) / Math.PI);
+  
+  // Vermeiden Division durch Null
+  if (mag1 === 0 || mag2 === 0) return 0;
+  
+  // Begrenze den Cosinus-Wert um numerische Fehler zu vermeiden
+  const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+  
+  const angleRad = Math.acos(cosAngle);
+  const angleDeg = (angleRad * 180) / Math.PI;
+  
+  // Runde auf ganze Grad
+  return Math.round(angleDeg);
 }
 
 // Hilfsfunktionen für Maßstab
@@ -29,6 +39,27 @@ function metersToPixels(meters, scale) {
 
 function getDistance(p1, p2) {
   return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+}
+
+// Funktion zur Berechnung der Polygonfläche mit der Shoelace-Formel
+function calculatePolygonArea(points, scale) {
+  if (points.length < 3) return 0;
+  
+  let area = 0;
+  const n = points.length;
+  
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
+  
+  area = Math.abs(area) / 2;
+  
+  // Umrechnung von Pixel² zu m²
+  const areaInSquareMeters = area / (scale * scale);
+  
+  return areaInSquareMeters;
 }
 
 const CanvasComponent = () => {
@@ -105,7 +136,11 @@ const CanvasComponent = () => {
   };
 
   const handleStageClick = (e) => {
-    if (e.target.getStage() !== e.target) return;
+    // Erlaube Klicks auf das Stage und auf die blaue Füllung
+    const isStage = e.target.getStage() === e.target;
+    const isPolygonFill = e.target.className === 'Line' && e.target.fill();
+    
+    if (!isStage && !isPolygonFill) return;
 
     const stage = e.target.getStage();
     let pos = stage.getPointerPosition();
@@ -240,7 +275,6 @@ const CanvasComponent = () => {
 
     // Erweiterte Konfliktprüfung
     if (isPrevEdgeLocked) {
-      // Nur nextPoint würde sich bewegen. Prüfe, ob das andere anliegende Elemente von nextPoint beeinflusst.
       const nextPointIndex = (angleIndex + 1) % p_len;
       const nextNextEdgeIndex = nextPointIndex;
       if (lockedEdges.has(nextNextEdgeIndex)) {
@@ -254,7 +288,6 @@ const CanvasComponent = () => {
         return;
       }
     } else if (isNextEdgeLocked) {
-      // Nur prevPoint würde sich bewegen. Prüfe, ob das andere anliegende Elemente von prevPoint beeinflusst.
       const prevPointIndex = (angleIndex - 1 + p_len) % p_len;
       const prevPrevEdgeIndex = (prevPointIndex - 1 + p_len) % p_len;
       if (lockedEdges.has(prevPrevEdgeIndex)) {
@@ -268,7 +301,6 @@ const CanvasComponent = () => {
         return;
       }
     } else {
-      // Beide, prevPoint und nextPoint, würden sich bewegen. Prüfe beide auf Konflikte.
       const nextPointIndex = (angleIndex + 1) % p_len;
       const nextNextEdgeIndex = nextPointIndex;
       if (lockedEdges.has(nextNextEdgeIndex)) {
@@ -301,50 +333,67 @@ const CanvasComponent = () => {
     const prevPoint = points[(angleIndex - 1 + p_len) % p_len];
     const nextPoint = points[(angleIndex + 1) % p_len];
 
+    // Berechne die aktuellen Vektoren
     const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
     const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
-
+    
+    // Berechne die Längen der Vektoren
+    const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+    const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+    
+    // Normalisiere die Vektoren
+    const nv1 = { x: v1.x / len1, y: v1.y / len1 };
+    const nv2 = { x: v2.x / len2, y: v2.y / len2 };
+    
+    // Berechne den aktuellen Winkel
     const currentAngle = getAngle(prevPoint, currentPoint, nextPoint);
-    const angleDifference = angleValue - currentAngle;
-    const rotationRad = (angleDifference * Math.PI) / 180;
+    
+    console.log(`Winkel-Änderung: Aktuell ${currentAngle}°, Gewünscht ${angleValue}°, Differenz ${angleValue - currentAngle}°`);
+    
+    // Berechne die Winkeldifferenz
+    const angleDiff = angleValue - currentAngle;
+    const rotationRad = (angleDiff * Math.PI) / 180;
 
     if (isPrevEdgeLocked) {
+      // Nur den nachfolgenden Punkt bewegen
+      // Rotiere den Vektor v2 um den gewünschten Winkel
       const cos = Math.cos(rotationRad);
       const sin = Math.sin(rotationRad);
-      const newV2x = v2.x * cos - v2.y * sin;
-      const newV2y = v2.x * sin + v2.y * cos;
+      
+      // Neue Position für den nächsten Punkt
       newPoints[(angleIndex + 1) % p_len] = {
-        x: currentPoint.x + newV2x,
-        y: currentPoint.y + newV2y
+        x: currentPoint.x + (v2.x * cos - v2.y * sin),
+        y: currentPoint.y + (v2.x * sin + v2.y * cos)
       };
     } else if (isNextEdgeLocked) {
+      // Nur den vorherigen Punkt bewegen
+      // Rotiere den Vektor v1 um den negativen gewünschten Winkel
       const cos = Math.cos(-rotationRad);
       const sin = Math.sin(-rotationRad);
-      const newV1x = v1.x * cos - v1.y * sin;
-      const newV1y = v1.x * sin + v1.y * cos;
+      
+      // Neue Position für den vorherigen Punkt
       newPoints[(angleIndex - 1 + p_len) % p_len] = {
-        x: currentPoint.x + newV1x,
-        y: currentPoint.y + newV1y
+        x: currentPoint.x + (v1.x * cos - v1.y * sin),
+        y: currentPoint.y + (v1.x * sin + v1.y * cos)
       };
     } else {
+      // Beide Punkte bewegen - teile die Rotation gleichmäßig auf
       const halfRotation = rotationRad / 2;
+      
+      // Rotiere v1 um -halfRotation
       const cos1 = Math.cos(-halfRotation);
       const sin1 = Math.sin(-halfRotation);
-      const newV1x = v1.x * cos1 - v1.y * sin1;
-      const newV1y = v1.x * sin1 + v1.y * cos1;
-
+      newPoints[(angleIndex - 1 + p_len) % p_len] = {
+        x: currentPoint.x + (v1.x * cos1 - v1.y * sin1),
+        y: currentPoint.y + (v1.x * sin1 + v1.y * cos1)
+      };
+      
+      // Rotiere v2 um halfRotation
       const cos2 = Math.cos(halfRotation);
       const sin2 = Math.sin(halfRotation);
-      const newV2x = v2.x * cos2 - v2.y * sin2;
-      const newV2y = v2.x * sin2 + v2.y * cos2;
-
-      newPoints[(angleIndex - 1 + p_len) % p_len] = {
-        x: currentPoint.x + newV1x,
-        y: currentPoint.y + newV1y
-      };
       newPoints[(angleIndex + 1) % p_len] = {
-        x: currentPoint.x + newV2x,
-        y: currentPoint.y + newV2y
+        x: currentPoint.x + (v2.x * cos2 - v2.y * sin2),
+        y: currentPoint.y + (v2.x * sin2 + v2.y * cos2)
       };
     }
 
@@ -378,6 +427,58 @@ const CanvasComponent = () => {
       newSet.delete(angleIndex);
       return newSet;
     });
+  };
+
+  const handleDeletePoint = (pointIndex) => {
+    if (points.length <= 3) {
+      setErrorMessage('Mindestens 3 Punkte erforderlich!');
+      setTimeout(() => setErrorMessage(''), 3000);
+      return;
+    }
+
+    const newPoints = points.filter((_, index) => index !== pointIndex);
+    setPoints(newPoints);
+    
+    // Aktualisiere gesperrte Kanten (Indizes verschieben sich)
+    const newLockedEdges = new Set();
+    lockedEdges.forEach(edgeIndex => {
+      if (edgeIndex < pointIndex) {
+        newLockedEdges.add(edgeIndex);
+      } else if (edgeIndex > pointIndex) {
+        newLockedEdges.add(edgeIndex - 1);
+      }
+      // Kante am gelöschten Punkt wird entfernt
+    });
+    setLockedEdges(newLockedEdges);
+    
+    // Aktualisiere gesperrte Winkel
+    const newLockedAngles = new Set();
+    lockedAngles.forEach(angleIndex => {
+      if (angleIndex < pointIndex) {
+        newLockedAngles.add(angleIndex);
+      } else if (angleIndex > pointIndex) {
+        newLockedAngles.add(angleIndex - 1);
+      }
+      // Winkel am gelöschten Punkt wird entfernt
+    });
+    setLockedAngles(newLockedAngles);
+    
+    // Hauswand-Kanten aktualisieren
+    const newHauswandEdges = hauswandEdges
+      .map(edgeIndex => {
+        if (edgeIndex < pointIndex) return edgeIndex;
+        if (edgeIndex > pointIndex) return edgeIndex - 1;
+        return -1; // Markiere zum Löschen
+      })
+      .filter(edgeIndex => edgeIndex !== -1);
+    setHauswandEdges(newHauswandEdges);
+  };
+
+  const handleClearAllPoints = () => {
+    setPoints([]);
+    setLockedEdges(new Set());
+    setLockedAngles(new Set());
+    setHauswandEdges([]);
   };
 
   const checkIfMoveAllowed = (pointIndex) => {
@@ -479,148 +580,202 @@ const CanvasComponent = () => {
       })
     : [];
 
+  // Flächenberechnung
+  const polygonArea = calculatePolygonArea(points, scale);
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-      {/* Left Panel - Controls */}
-      <div className="lg:w-80 space-y-6">
-        {/* Main Control Panel */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="text-blue-500">⚙️</span>
-            Einstellungen
-          </h2>
-          
-          {/* Scale Control */}
-          <div className="space-y-3 mb-6">
-            <label className="block text-sm font-medium text-gray-700">
-              Maßstab (Pixel pro Meter)
-            </label>
-            <div className="flex items-center gap-3">
-              <input 
-                type="range"
-                value={scale} 
-                onChange={(e) => setScale(Number(e.target.value))}
-                min="10"
-                max="200"
-                step="5"
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-              />
-              <input 
-                type="number" 
-                value={scale} 
-                onChange={(e) => setScale(Number(e.target.value))}
-                min="10"
-                max="200"
-                step="5"
-                className="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+    <div className="max-w-6xl mx-auto space-y-4">
+      {/* Top Panel - Settings */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Settings Section */}
+          <div className="lg:w-64">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-blue-500">⚙️</span>
+              Einstellungen
+            </h2>
+            
+            {/* Scale Control */}
+            <div className="space-y-2 mb-4">
+              <label className="block text-xs font-medium text-gray-700">
+                Maßstab (Pixel pro Meter)
+              </label>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="range"
+                  value={scale} 
+                  onChange={(e) => setScale(Number(e.target.value))}
+                  min="10"
+                  max="200"
+                  step="5"
+                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <input 
+                  type="number" 
+                  value={scale} 
+                  onChange={(e) => setScale(Number(e.target.value))}
+                  min="10"
+                  max="200"
+                  step="5"
+                  className="w-14 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                Aktuell: 1m = {scale}px, Grid = 1m
+              </p>
             </div>
-            <p className="text-xs text-gray-500">
-              Aktuell: 1m = {scale}px, Grid = 1m
-            </p>
+            
+            {/* Checkboxes */}
+            <div className="space-y-2 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={showLengths} 
+                  onChange={(e) => setShowLengths(e.target.checked)}
+                  className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-xs font-medium text-gray-700">Längen anzeigen</span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={snapEnabled} 
+                  onChange={(e) => setSnapEnabled(e.target.checked)}
+                  className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-xs font-medium text-gray-700">Snap aktiviert</span>
+              </label>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setLockedEdges(new Set())}
+                disabled={lockedEdges.size === 0}
+                className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200"
+              >
+                <span>🔓</span>
+                Kanten entsperren ({lockedEdges.size})
+              </button>
+              
+              <button
+                onClick={() => setLockedAngles(new Set())}
+                disabled={lockedAngles.size === 0}
+                className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200"
+              >
+                <span>🔓</span>
+                Winkel entsperren ({lockedAngles.size})
+              </button>
+            </div>
           </div>
           
-          {/* Checkboxes */}
-          <div className="space-y-3 mb-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={showLengths} 
-                onChange={(e) => setShowLengths(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <span className="text-sm font-medium text-gray-700">Längen anzeigen</span>
-            </label>
+          {/* Results Section */}
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-green-500">📊</span>
+              Ergebnisse
+            </h2>
             
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={snapEnabled} 
-                onChange={(e) => setSnapEnabled(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <span className="text-sm font-medium text-gray-700">Snap aktiviert</span>
-            </label>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="space-y-3">
-            <button
-              onClick={() => setLockedEdges(new Set())}
-              disabled={lockedEdges.size === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200"
-            >
-              <span>🔓</span>
-              Kanten-Sperren aufheben ({lockedEdges.size})
-            </button>
-            
-            <button
-              onClick={() => setLockedAngles(new Set())}
-              disabled={lockedAngles.size === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200"
-            >
-              <span>🔓</span>
-              Winkel-Sperren aufheben ({lockedAngles.size})
-            </button>
+            {points.length >= 3 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Fläche */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-blue-600 text-sm">📐</span>
+                    <h3 className="text-xs font-medium text-blue-800">Fläche</h3>
+                  </div>
+                  <p className="text-xl font-bold text-blue-900">{polygonArea.toFixed(2)} m²</p>
+                </div>
+                
+                {/* Anzahl Punkte */}
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-green-600 text-sm">📍</span>
+                    <h3 className="text-xs font-medium text-green-800">Punkte</h3>
+                  </div>
+                  <p className="text-xl font-bold text-green-900">{points.length}</p>
+                </div>
+                
+                {/* Hauswand Info */}
+                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 border border-red-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-red-600 text-sm">🏠</span>
+                    <h3 className="text-xs font-medium text-red-800">Hauswand</h3>
+                  </div>
+                  <p className="text-xs text-red-900">
+                    {hauswandEdges.length > 0 ? 
+                      `Kante ${hauswandEdges[0] + 1} festgelegt` : 
+                      'Keine Hauswand festgelegt'
+                    }
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+                <p className="text-gray-600 text-sm">Mindestens 3 Punkte erforderlich für Berechnung</p>
+              </div>
+            )}
           </div>
         </div>
-        
-        {/* Instructions Panel */}
-        <div className="bg-blue-50/80 backdrop-blur-sm rounded-xl shadow-lg border border-blue-200 p-6">
-          <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
-            <span>💡</span>
-            Bedienungshinweise
+      </div>
+
+      {/* Instructions Panel */}
+      <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg shadow-md border border-blue-200 p-3">
+        <h3 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
+          <span>💡</span>
+          Bedienungshinweise
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-blue-700">
+          <p><strong>Punkte setzen:</strong> Klick auf Zeichenfläche</p>
+          <p><strong>Längen bearbeiten:</strong> Klick auf grüne Angaben</p>
+          <p><strong>Winkel bearbeiten:</strong> Klick auf violette Angaben</p>
+          <p><strong>Hauswand setzen:</strong> Hover über Kante + Klick</p>
+        </div>
+      </div>
+      
+      {/* Status Panel */}
+      {(lockedEdges.size > 0 || lockedAngles.size > 0) && (
+        <div className="bg-green-50/80 backdrop-blur-sm rounded-lg shadow-md border border-green-200 p-3">
+          <h3 className="text-sm font-semibold text-green-800 mb-2 flex items-center gap-2">
+            <span>🔒</span>
+            Gesperrte Elemente
           </h3>
-          <div className="space-y-2 text-sm text-blue-700">
-            <p><strong>Punkte setzen:</strong> Klicken Sie auf die Zeichenfläche</p>
-            <p><strong>Längen bearbeiten:</strong> Klicken Sie auf die grünen Längenangaben</p>
-            <p><strong>Winkel bearbeiten:</strong> Klicken Sie auf die violetten Winkelangaben</p>
-            <p><strong>Hauswand setzen:</strong> Hovern Sie über eine Kante und klicken Sie</p>
-            <p><strong>Punkte bewegen:</strong> Ziehen Sie die blauen Punkte</p>
-          </div>
-        </div>
-        
-        {/* Status Panel */}
-        {(lockedEdges.size > 0 || lockedAngles.size > 0) && (
-          <div className="bg-green-50/80 backdrop-blur-sm rounded-xl shadow-lg border border-green-200 p-6">
-            <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-2">
-              <span>🔒</span>
-              Gesperrte Elemente
-            </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {lockedEdges.size > 0 && (
-              <p className="text-sm text-green-700 mb-1">
+              <p className="text-xs text-green-700">
                 <strong>Kanten:</strong> {Array.from(lockedEdges).map(i => i + 1).join(', ')}
               </p>
             )}
             {lockedAngles.size > 0 && (
-              <p className="text-sm text-green-700">
+              <p className="text-xs text-green-700">
                 <strong>Winkel:</strong> {Array.from(lockedAngles).map(i => i + 1).join(', ')}
               </p>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
-      {/* Right Panel - Canvas Area */}
-      <div className="flex-1">
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="text-green-500">📐</span>
-            Zeichenfläche
-          </h2>
-          
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-red-500">⚠️</span>
-                <span className="text-red-700 font-medium">{errorMessage}</span>
-              </div>
+      {/* Canvas Area */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+        <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <span className="text-green-500">📐</span>
+          Zeichenfläche
+        </h2>
+        
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-red-500">⚠️</span>
+              <span className="text-red-700 text-sm font-medium">{errorMessage}</span>
             </div>
-          )}
-          
+          </div>
+        )}
+        
+        <div className="flex gap-4">
           {/* Canvas Container */}
-          <div className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-hidden">
+          <div className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-hidden inline-block">
             <Stage 
               width={CANVAS_SIZE} 
               height={CANVAS_SIZE} 
@@ -651,6 +806,7 @@ const CanvasComponent = () => {
                       stroke="transparent"
                       strokeWidth={0}
                       fill="rgba(0,0,255,0.1)"
+                      onClick={handleStageClick}
                     />
                     {/* Einzelne Kanten für Hover-Effekt */}
                     {points.map((point, i) => {
@@ -866,6 +1022,7 @@ const CanvasComponent = () => {
                         strokeWidth={1}
                         cornerRadius={5}
                         onClick={(e) => {
+                          
                           e.evt.stopPropagation();
                           if (isAngleLocked) {
                             handleUnlockAngle(i);
@@ -897,6 +1054,7 @@ const CanvasComponent = () => {
                         offsetX={isAngleLocked ? 20 : (!isAngleEditable ? 20 : 15)}
                         offsetY={5}
                         onClick={(e) => {
+                          return;
                           e.evt.stopPropagation();
                           if (isAngleLocked) {
                             handleUnlockAngle(i);
@@ -915,24 +1073,69 @@ const CanvasComponent = () => {
               </Layer>
             </Stage>
           </div>
+          
+          {/* Punkteliste */}
+          <div className="w-48 bg-gray-50 rounded-lg border border-gray-200 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <span className="text-blue-500">📍</span>
+                Punkte ({points.length})
+              </h3>
+              {points.length > 0 && (
+                <button
+                  onClick={handleClearAllPoints}
+                  className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors duration-200"
+                  title="Alle Punkte löschen"
+                >
+                  🗑️ Alle
+                </button>
+              )}
+            </div>
+            {points.length > 0 ? (
+              <div className="space-y-1 max-h-80 overflow-y-auto">
+                {points.map((point, index) => (
+                  <div key={index} className="flex items-center justify-between bg-white rounded p-2 text-xs">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-800">Punkt {index + 1}</div>
+                      <div className="text-gray-600">
+                        x: {pixelsToMeters(point.x, scale)}m, y: {pixelsToMeters(point.y, scale)}m
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeletePoint(index)}
+                      disabled={points.length <= 3}
+                      className="ml-2 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs rounded transition-colors duration-200"
+                      title={points.length <= 3 ? "Mindestens 3 Punkte erforderlich" : "Punkt löschen"}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500 text-center py-4">
+                Keine Punkte vorhanden
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
       {/* Editing Modals */}
       {/* Längen-Bearbeitungsfeld */}
       {editingEdge !== null && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-green-500 rounded-xl p-6 shadow-2xl z-50">
-          <div className="mb-4 font-semibold text-gray-800">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-green-500 rounded-lg p-4 shadow-2xl z-50">
+          <div className="mb-3 font-semibold text-gray-800 text-sm">
             Neue Länge eingeben:
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <input
               type="number"
               value={editingLength}
               onChange={(e) => setEditingLength(e.target.value)}
               step="0.1"
               min="0.1"
-              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-18 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
               autoFocus
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
@@ -942,16 +1145,16 @@ const CanvasComponent = () => {
                 }
               }}
             />
-            <span className="text-gray-600">m</span>
+            <span className="text-gray-600 text-sm">m</span>
             <button
               onClick={() => handleLengthChange(editingLength)}
-              className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-md transition-colors duration-200"
+              className="px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors duration-200"
             >
               OK
             </button>
             <button
               onClick={handleLengthCancel}
-              className="px-3 py-2 bg-gray-400 hover:bg-gray-500 text-white font-medium rounded-md transition-colors duration-200"
+              className="px-2 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-xs font-medium rounded-md transition-colors duration-200"
             >
               Abbrechen
             </button>
@@ -961,11 +1164,11 @@ const CanvasComponent = () => {
       
       {/* Winkel-Bearbeitungsfeld */}
       {editingAngle !== null && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-purple-500 rounded-xl p-6 shadow-2xl z-50">
-          <div className="mb-4 font-semibold text-gray-800">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-purple-500 rounded-lg p-4 shadow-2xl z-50">
+          <div className="mb-3 font-semibold text-gray-800 text-sm">
             Neuen Winkel eingeben:
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <input
               type="number"
               value={editingAngleValue}
@@ -973,7 +1176,7 @@ const CanvasComponent = () => {
               step="1"
               min="1"
               max="179"
-              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-18 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               autoFocus
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
@@ -983,16 +1186,16 @@ const CanvasComponent = () => {
                 }
               }}
             />
-            <span className="text-gray-600">°</span>
+            <span className="text-gray-600 text-sm">°</span>
             <button
               onClick={() => handleAngleChange(editingAngleValue)}
-              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-md transition-colors duration-200"
+              className="px-2 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium rounded-md transition-colors duration-200"
             >
               OK
             </button>
             <button
               onClick={handleAngleCancel}
-              className="px-3 py-2 bg-gray-400 hover:bg-gray-500 text-white font-medium rounded-md transition-colors duration-200"
+              className="px-2 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-xs font-medium rounded-md transition-colors duration-200"
             >
               Abbrechen
             </button>
