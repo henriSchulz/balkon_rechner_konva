@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Stage, Layer, Circle, Line, Text, Group, Rect } from 'react-konva';
 
 const GRID_SIZE = 50;
@@ -47,6 +47,7 @@ const CanvasComponent = () => {
   const [errorMessage, setErrorMessage] = useState(''); // Fehlermeldung für gesperrte Kanten/Winkel
   const [cursorPos, setCursorPos] = useState(null);
   const [snapLines, setSnapLines] = useState([]);
+  const dragStartPoints = useRef(null);
 
   const getSnappedPos = (pos, allPoints, lastPoint) => {
     let snappedPos = { ...pos };
@@ -348,22 +349,69 @@ const CanvasComponent = () => {
     });
   };
 
-  const handleDragMove = (e, idx) => {
-    let newPos = e.target.position();
+  const checkIfMoveAllowed = (pointIndex) => {
+    const affectedEdges = [];
+    const affectedAngles = [];
 
+    const outgoingEdgeIndex = pointIndex;
+    const incomingEdgeIndex = (pointIndex - 1 + points.length) % points.length;
+
+    if (lockedEdges.has(outgoingEdgeIndex)) affectedEdges.push(outgoingEdgeIndex);
+    if (lockedEdges.has(incomingEdgeIndex)) affectedEdges.push(incomingEdgeIndex);
+
+    if (lockedAngles.has(pointIndex)) affectedAngles.push(pointIndex);
+
+    const prevAngleIndex = (pointIndex - 1 + points.length) % points.length;
+    const nextAngleIndex = (pointIndex + 1) % points.length;
+
+    if (lockedAngles.has(prevAngleIndex)) affectedAngles.push(prevAngleIndex);
+    if (lockedAngles.has(nextAngleIndex)) affectedAngles.push(nextAngleIndex);
+
+    return { edges: affectedEdges, angles: affectedAngles };
+  };
+
+  const handleDragStart = (e, idx) => {
+    setErrorMessage('');
+    dragStartPoints.current = points;
+  };
+
+  const handleDragMove = (e, idx) => {
+    const affected = checkIfMoveAllowed(idx);
+    if (affected.edges.length > 0 || affected.angles.length > 0) {
+      e.target.position(points[idx]); // Prevent visual movement
+      return;
+    }
+
+    let newPos = e.target.position();
     if (snapEnabled) {
       const otherPoints = points.filter((_, i) => i !== idx);
-      const lastPoint = points.length > 1 ? points[idx === 0 ? points.length - 1 : idx - 1] : null;
-      newPos = getSnappedPos(newPos, otherPoints, lastPoint);
+      newPos = getSnappedPos(newPos, otherPoints, null);
+      e.target.position(newPos);
     }
+
+    const newPoints = points.map((p, i) => (i === idx ? newPos : p));
+    setPoints(newPoints);
+  };
+
+  const handleDragEnd = (e, idx) => {
+    setSnapLines([]);
+    const affected = checkIfMoveAllowed(idx);
+    if (affected.edges.length > 0 || affected.angles.length > 0) {
+      let message = 'Punkt kann nicht bewegt werden - ';
+      if (affected.edges.length > 0) message += `Kante ${affected.edges[0] + 1} ist gesperrt`;
+      if (affected.angles.length > 0) {
+        if (affected.edges.length > 0) message += ' und ';
+        message += `Winkel ${affected.angles[0] + 1} ist gesperrt`;
+      }
+      message += '!';
       
-    if (lockedEdges.size > 0 || lockedAngles.size > 0) {
-      const dx = newPos.x - points[idx].x;
-      const dy = newPos.y - points[idx].y;
-      setPoints(points.map(p => ({ x: p.x + dx, y: p.y + dy })));
-    } else {
-      setPoints(points.map((point, i) => (i === idx ? newPos : point)));
+      setErrorMessage(message);
+      setTimeout(() => setErrorMessage(''), 3000);
+
+      // Revert to the original state if the move was invalid
+      setPoints(dragStartPoints.current);
     }
+    dragStartPoints.current = null;
   };
 
   const linePoints = points.flatMap(point => [point.x, point.y]);
@@ -866,7 +914,9 @@ const CanvasComponent = () => {
               stroke="white"
               strokeWidth={2}
               draggable
+              onDragStart={e => handleDragStart(e, i)}
               onDragMove={e => handleDragMove(e, i)}
+              onDragEnd={e => handleDragEnd(e, i)}
             />
             {angles[i] !== undefined && (
               <Group>
