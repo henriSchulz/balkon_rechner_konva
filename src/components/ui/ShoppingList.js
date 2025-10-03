@@ -7,27 +7,27 @@ const ShoppingList = ({ profileData }) => {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-orange-200 p-4 w-full">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
-          <span className="text-orange-600">🛒</span>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 w-full max-w-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-gray-900">
           Einkaufsliste
         </h3>
         <button
-          className="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded transition-colors duration-200"
+          className="px-3 py-1 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors duration-200"
           onClick={handleAddToCart}
         >
-          Zum Warenkorb hinzufügen
+          Zum Warenkorb
         </button>
       </div>
-      <div className="text-xs text-orange-700">
-        <div className="font-medium mb-2">Bodenprofile 140mm breit:</div>
-        <div className="space-y-1 overflow-y-auto">
+      <div className="text-sm text-gray-700">
+        <div className="font-medium mb-2 text-gray-800">Bodenprofile (140mm breit):</div>
+        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
           {Object.entries(profileData.profileCounts)
             .sort(([a], [b]) => Number(a) - Number(b))
             .map(([length, count]) => (
-              <div key={length} className="bg-orange-50 rounded p-2">
-                <div className="font-medium text-orange-800">{count}x {length}mm</div>
+              <div key={length} className="bg-gray-50 rounded-md p-2 flex justify-between items-center">
+                <span className="font-medium text-gray-800">{count}x</span>
+                <span className="text-gray-600">{length}mm</span>
               </div>
             ))}
         </div>

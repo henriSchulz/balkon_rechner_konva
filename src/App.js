@@ -3,18 +3,15 @@ import BalkonRechnerPage from './components/BalkonRechnerPage';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            🏗️ Balkon Rechner
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Präzise Vermessung und Planung für Ihren Balkon
-          </p>
+    <div className="min-h-screen bg-gray-100 text-gray-800">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <h1 className="text-xl font-bold text-gray-900">Balkonrechner</h1>
         </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BalkonRechnerPage />
-      </div>
+      </main>
     </div>
   );
 }
