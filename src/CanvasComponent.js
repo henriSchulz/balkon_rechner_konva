@@ -5,6 +5,7 @@ const GRID_SIZE = 50;
 const CANVAS_SIZE = 700;
 const DEFAULT_SCALE = 50; // 1 Meter = 50 Pixel
 const SNAP_THRESHOLD_PX = 6;
+const ANGLE_SNAP_THRESHOLD_DEG = 4;
 
 
 function getAngle(p0, p1, p2) {
@@ -44,17 +45,75 @@ const CanvasComponent = () => {
   const [editingAngleValue, setEditingAngleValue] = useState(''); // Eingabefeld für neuen Winkel
   const [lockedAngles, setLockedAngles] = useState(new Set()); // Set der gesperrten Winkel
   const [errorMessage, setErrorMessage] = useState(''); // Fehlermeldung für gesperrte Kanten/Winkel
-  
+  const [cursorPos, setCursorPos] = useState(null);
+  const [snapLines, setSnapLines] = useState([]);
+
+  const getSnappedPos = (pos, allPoints, lastPoint) => {
+    let snappedPos = { ...pos };
+    const newSnapLines = [];
+
+    // Snap zu anderen Punkten (höchste Priorität)
+    for (const otherPoint of allPoints) {
+      if (getDistance(snappedPos, otherPoint) < SNAP_THRESHOLD_PX * 2) {
+        snappedPos = { ...otherPoint };
+        newSnapLines.push({ type: 'point', points: [snappedPos.x - 5, snappedPos.y, snappedPos.x + 5, snappedPos.y] });
+        newSnapLines.push({ type: 'point', points: [snappedPos.x, snappedPos.y - 5, snappedPos.x, snappedPos.y + 5] });
+        setSnapLines(newSnapLines);
+        return snappedPos; // Frühzeitige Rückkehr, da Punktsnap am wichtigsten ist
+      }
+    }
+
+    // Achsen-Snap
+    for (const otherPoint of allPoints) {
+      if (Math.abs(snappedPos.x - otherPoint.x) < SNAP_THRESHOLD_PX) {
+        snappedPos.x = otherPoint.x;
+        newSnapLines.push({ type: 'axis', points: [otherPoint.x, 0, otherPoint.x, CANVAS_SIZE] });
+      }
+      if (Math.abs(snappedPos.y - otherPoint.y) < SNAP_THRESHOLD_PX) {
+        snappedPos.y = otherPoint.y;
+        newSnapLines.push({ type: 'axis', points: [0, otherPoint.y, CANVAS_SIZE, otherPoint.y] });
+      }
+    }
+
+    // Winkel-Snap
+    if (lastPoint) {
+      const angle = (Math.atan2(snappedPos.y - lastPoint.y, snappedPos.x - lastPoint.x) * 180) / Math.PI;
+      const distance = getDistance(lastPoint, snappedPos);
+
+      for (let snapAngle = 0; snapAngle <= 360; snapAngle += 45) {
+        if (Math.abs(angle - snapAngle) < ANGLE_SNAP_THRESHOLD_DEG) {
+          const newAngleRad = (snapAngle * Math.PI) / 180;
+          snappedPos.x = lastPoint.x + Math.cos(newAngleRad) * distance;
+          snappedPos.y = lastPoint.y + Math.sin(newAngleRad) * distance;
+          newSnapLines.push({ type: 'angle', points: [lastPoint.x, lastPoint.y, snappedPos.x, snappedPos.y] });
+          break; // Nur zum ersten passenden Winkel snappen
+        }
+      }
+    }
+
+    // Snap zum Grid
+    const nearestGridX = Math.round(snappedPos.x / scale) * scale;
+    const nearestGridY = Math.round(snappedPos.y / scale) * scale;
+
+    if (getDistance(snappedPos, { x: nearestGridX, y: nearestGridY }) < SNAP_THRESHOLD_PX) {
+      snappedPos = { x: nearestGridX, y: nearestGridY };
+    }
+
+    setSnapLines(newSnapLines);
+    return snappedPos;
+  };
 
   const handleStageClick = (e) => {
-    // Verhindere das Setzen neuer Punkte bei Klick auf interaktive Elemente
-    if (e.target instanceof window.Konva.Circle) return; // Punkte
-    if (e.target instanceof window.Konva.Line) return;   // Linien/Kanten
-    if (e.target instanceof window.Konva.Rect) return;   // Button-Hintergrund
-    if (e.target instanceof window.Konva.Text) return;   // Button-Text und Winkel
-    
+    if (e.target.getStage() !== e.target) return;
+
     const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
+    let pos = stage.getPointerPosition();
+
+    if (snapEnabled) {
+      const lastPoint = points.length > 0 ? points[points.length - 1] : null;
+      pos = getSnappedPos(pos, points, lastPoint);
+    }
+
     setPoints([...points, pos]);
   };
 
@@ -289,91 +348,22 @@ const CanvasComponent = () => {
     });
   };
 
-  const checkIfMoveAllowed = (pointIndex, newX, newY) => {
-    // Überprüfe, ob die Bewegung eines Punktes gesperrte Kanten oder Winkel beeinflusst
-    const affectedEdges = [];
-    const affectedAngles = [];
-    
-    // Ein Punkt ist mit zwei Kanten verbunden:
-    // 1. Die Kante, die von diesem Punkt ausgeht (Index = pointIndex)
-    // 2. Die Kante, die zu diesem Punkt führt (Index = (pointIndex - 1 + points.length) % points.length)
-    
-    const outgoingEdgeIndex = pointIndex;
-    const incomingEdgeIndex = (pointIndex - 1 + points.length) % points.length;
-    
-    if (lockedEdges.has(outgoingEdgeIndex)) {
-      affectedEdges.push(outgoingEdgeIndex);
-    }
-    
-    if (lockedEdges.has(incomingEdgeIndex)) {
-      affectedEdges.push(incomingEdgeIndex);
-    }
-    
-    // Ein Punkt ist auch der Scheitelpunkt eines Winkels
-    if (lockedAngles.has(pointIndex)) {
-      affectedAngles.push(pointIndex);
-    }
-    
-    // Ein Punkt ist auch Teil der beiden angrenzenden Winkel
-    const prevAngleIndex = (pointIndex - 1 + points.length) % points.length;
-    const nextAngleIndex = (pointIndex + 1) % points.length;
-    
-    if (lockedAngles.has(prevAngleIndex)) {
-      affectedAngles.push(prevAngleIndex);
-    }
-    
-    if (lockedAngles.has(nextAngleIndex)) {
-      affectedAngles.push(nextAngleIndex);
-    }
-    
-    return { edges: affectedEdges, angles: affectedAngles };
-  };
-
   const handleDragMove = (e, idx) => {
-    let { x, y } = e.target.position();
-
-    // Überprüfe, ob die Bewegung gesperrte Kanten oder Winkel beeinflusst
-    const affected = checkIfMoveAllowed(idx, x, y);
-    
-    if (affected.edges.length > 0 || affected.angles.length > 0) {
-      // Bewegung nicht erlaubt - zeige Fehlermeldung
-      let message = 'Punkt kann nicht bewegt werden - ';
-      if (affected.edges.length > 0) {
-        message += `Kante ${affected.edges[0] + 1} ist gesperrt`;
-      }
-      if (affected.angles.length > 0) {
-        if (affected.edges.length > 0) message += ' und ';
-        message += `Winkel ${affected.angles[0] + 1} ist gesperrt`;
-      }
-      message += '!';
-      
-      setErrorMessage(message);
-      setTimeout(() => setErrorMessage(''), 3000);
-      
-      // Setze den Punkt auf seine ursprüngliche Position zurück
-      e.target.position(points[idx]);
-      return;
-    }
+    let newPos = e.target.position();
 
     if (snapEnabled) {
-        const allOtherPoints = points.filter((_, i) => i !== idx);
-        // Snap zu anderen Punkten
-        for (const otherPoint of allOtherPoints) {
-            if (Math.abs(x - otherPoint.x) < SNAP_THRESHOLD_PX) x = otherPoint.x;
-            if (Math.abs(y - otherPoint.y) < SNAP_THRESHOLD_PX) y = otherPoint.y;
-        }
-        
-        // Snap zum Grid (Maßstabs-Raster)
-        const nearestGridX = Math.round(x / scale) * scale;
-        const nearestGridY = Math.round(y / scale) * scale;
-        
-        if (Math.abs(x - nearestGridX) < SNAP_THRESHOLD_PX) x = nearestGridX;
-        if (Math.abs(y - nearestGridY) < SNAP_THRESHOLD_PX) y = nearestGridY;
+      const otherPoints = points.filter((_, i) => i !== idx);
+      const lastPoint = points.length > 1 ? points[idx === 0 ? points.length - 1 : idx - 1] : null;
+      newPos = getSnappedPos(newPos, otherPoints, lastPoint);
     }
       
-    setPoints(points =>
-      points.map((point, i) => (i === idx ? { x, y } : point))
-    );
+    if (lockedEdges.size > 0 || lockedAngles.size > 0) {
+      const dx = newPos.x - points[idx].x;
+      const dy = newPos.y - points[idx].y;
+      setPoints(points.map(p => ({ x: p.x + dx, y: p.y + dy })));
+    } else {
+      setPoints(points.map((point, i) => (i === idx ? newPos : point)));
+    }
   };
 
   const linePoints = points.flatMap(point => [point.x, point.y]);
@@ -660,6 +650,21 @@ const CanvasComponent = () => {
         height={CANVAS_SIZE}
         style={{ border: '1px solid black', height: '700px', width: '700px' }}
         onMouseDown={handleStageClick}
+        onMouseMove={(e) => {
+          const stage = e.target.getStage();
+          let pos = stage.getPointerPosition();
+          if (snapEnabled && points.length > 0) {
+            const lastPoint = points[points.length - 1];
+            pos = getSnappedPos(pos, points, lastPoint);
+          } else {
+            setSnapLines([]); // Clear snap lines if not snapping
+          }
+          setCursorPos(pos);
+        }}
+        onMouseLeave={() => {
+          setCursorPos(null);
+          setSnapLines([]); // Clear snap lines on leave
+        }}
       >
       <Layer>
         {gridLines}
@@ -798,8 +803,53 @@ const CanvasComponent = () => {
             })}
           </>
         )}
+        {/* Snap-Hilfslinien */}
+        {snapLines.map((line, i) => (
+          <Line
+            key={`snap-line-${i}`}
+            points={line.points}
+            stroke={line.type === 'axis' ? 'rgba(255, 0, 0, 0.5)' : 'rgba(0, 255, 0, 0.5)'}
+            strokeWidth={1}
+            dash={line.type === 'axis' ? [4, 4] : [2, 2]}
+          />
+        ))}
+
+        {/* Smart Guides - Vorschau für die nächste Linie */}
+        {cursorPos && points.length > 0 && (
+          <Group>
+            {(() => {
+              const lastPoint = points[points.length - 1];
+              const distance = getDistance(lastPoint, cursorPos);
+              const lengthInMeters = pixelsToMeters(distance, scale);
+              const angle = Math.atan2(cursorPos.y - lastPoint.y, cursorPos.x - lastPoint.x);
+              const degrees = (angle * 180) / Math.PI;
+
+              return (
+                <>
+                  <Line
+                    points={[lastPoint.x, lastPoint.y, cursorPos.x, cursorPos.y]}
+                    stroke="#4CAF50"
+                    strokeWidth={2}
+                    dash={[5, 5]}
+                  />
+                  <Text
+                    x={cursorPos.x + 10}
+                    y={cursorPos.y}
+                    text={`${lengthInMeters} m / ${degrees.toFixed(1)}°`}
+                    fontSize={12}
+                    fill="#333"
+                    padding={4}
+                    backgroundColor="rgba(255, 255, 255, 0.75)"
+                    cornerRadius={4}
+                  />
+                </>
+              );
+            })()}
+          </Group>
+        )}
+
         {points.map((point, i) => (
-          <div key={i}>
+          <Group key={`point-group-${i}`}>
             {/* Schatten für Punkte */}
             <Circle
               x={point.x + 1}
@@ -886,7 +936,7 @@ const CanvasComponent = () => {
                 })()}
               </Group>
             )}
-          </div>
+          </Group>
         ))}
       </Layer>
     </Stage>
