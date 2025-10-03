@@ -21,7 +21,7 @@ const ShoppingList = ({ profileData }) => {
       </div>
       <div className="text-sm text-gray-700">
         <div className="font-medium mb-2 text-gray-800">Bodenprofile (140mm breit):</div>
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+        <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
           {Object.entries(profileData.profileCounts)
             .sort(([a], [b]) => Number(a) - Number(b))
             .map(([length, count]) => (

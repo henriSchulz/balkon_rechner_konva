@@ -43,7 +43,7 @@ const BalkonRechnerPage = () => {
                 <InfoPanel errorMessage={errorMessage} />
                 <div className='flex flex-row w-full gap-4'>
                     <Canvas state={canvasState} handlers={canvasHandlers} />
-                    {profileData.totalLength > 0 && <ShoppingList profileData={profileData} />}
+                     <ShoppingList profileData={profileData} />
                 </div>
             </div>
 
