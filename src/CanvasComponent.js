@@ -213,25 +213,23 @@ const CanvasComponent = () => {
 
   const handleAngleChange = (newAngle) => {
     if (editingAngle === null || !newAngle || isNaN(newAngle)) return;
-    
+
     const angleIndex = editingAngle;
     const angleValue = parseFloat(newAngle);
-    
-    // Winkel muss zwischen 1 und 179 Grad liegen (keine 0° oder 180°)
+
     if (angleValue <= 0 || angleValue >= 180) {
       setErrorMessage('Winkel muss zwischen 1° und 179° liegen!');
       setTimeout(() => setErrorMessage(''), 3000);
       return;
     }
-    
-    // Finde die beiden angrenzenden Kanten des Winkels
-    const prevEdgeIndex = (angleIndex - 1 + points.length) % points.length;
+
+    const p_len = points.length;
+    const prevEdgeIndex = (angleIndex - 1 + p_len) % p_len;
     const nextEdgeIndex = angleIndex;
-    
+
     const isPrevEdgeLocked = lockedEdges.has(prevEdgeIndex);
     const isNextEdgeLocked = lockedEdges.has(nextEdgeIndex);
-    
-    // Prüfe ob beide angrenzende Kanten gesperrt sind
+
     if (isPrevEdgeLocked && isNextEdgeLocked) {
       setErrorMessage('Winkel kann nicht bearbeitet werden - beide angrenzenden Kanten sind gesperrt!');
       setTimeout(() => setErrorMessage(''), 3000);
@@ -239,86 +237,119 @@ const CanvasComponent = () => {
       setEditingAngleValue('');
       return;
     }
-    
+
+    // Erweiterte Konfliktprüfung
+    if (isPrevEdgeLocked) {
+      // Nur nextPoint würde sich bewegen. Prüfe, ob das andere anliegende Elemente von nextPoint beeinflusst.
+      const nextPointIndex = (angleIndex + 1) % p_len;
+      const nextNextEdgeIndex = nextPointIndex;
+      if (lockedEdges.has(nextNextEdgeIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Kante ${nextNextEdgeIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+      if (lockedAngles.has(nextPointIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Winkel bei Punkt ${nextPointIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+    } else if (isNextEdgeLocked) {
+      // Nur prevPoint würde sich bewegen. Prüfe, ob das andere anliegende Elemente von prevPoint beeinflusst.
+      const prevPointIndex = (angleIndex - 1 + p_len) % p_len;
+      const prevPrevEdgeIndex = (prevPointIndex - 1 + p_len) % p_len;
+      if (lockedEdges.has(prevPrevEdgeIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Kante ${prevPrevEdgeIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+      if (lockedAngles.has(prevPointIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Winkel bei Punkt ${prevPointIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+    } else {
+      // Beide, prevPoint und nextPoint, würden sich bewegen. Prüfe beide auf Konflikte.
+      const nextPointIndex = (angleIndex + 1) % p_len;
+      const nextNextEdgeIndex = nextPointIndex;
+      if (lockedEdges.has(nextNextEdgeIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Kante ${nextNextEdgeIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+      if (lockedAngles.has(nextPointIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Winkel bei Punkt ${nextPointIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+
+      const prevPointIndex = (angleIndex - 1 + p_len) % p_len;
+      const prevPrevEdgeIndex = (prevPointIndex - 1 + p_len) % p_len;
+      if (lockedEdges.has(prevPrevEdgeIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Kante ${prevPrevEdgeIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+      if (lockedAngles.has(prevPointIndex)) {
+        setErrorMessage(`Änderung nicht möglich: Winkel bei Punkt ${prevPointIndex + 1} ist gesperrt.`);
+        setTimeout(() => setErrorMessage(''), 3000);
+        return;
+      }
+    }
+
     const newPoints = [...points];
     const currentPoint = points[angleIndex];
-    const prevPoint = points[(angleIndex - 1 + points.length) % points.length];
-    const nextPoint = points[(angleIndex + 1) % points.length];
-    
-    // Berechne die aktuellen Vektoren
+    const prevPoint = points[(angleIndex - 1 + p_len) % p_len];
+    const nextPoint = points[(angleIndex + 1) % p_len];
+
     const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
     const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
-    
-    // Berechne die Längen der Vektoren
-    const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
-    const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
-    
-    // Berechne den aktuellen Winkel zwischen den Vektoren
+
     const currentAngle = getAngle(prevPoint, currentPoint, nextPoint);
     const angleDifference = angleValue - currentAngle;
-    
-    // Berechne die Rotation, die angewendet werden muss
     const rotationRad = (angleDifference * Math.PI) / 180;
-    
+
     if (isPrevEdgeLocked) {
-      // Vorherige Kante ist gesperrt - nur nextPoint bewegen
       const cos = Math.cos(rotationRad);
       const sin = Math.sin(rotationRad);
-      
-      // Rotiere v2 um den gewünschten Winkel
       const newV2x = v2.x * cos - v2.y * sin;
       const newV2y = v2.x * sin + v2.y * cos;
-      
-      newPoints[(angleIndex + 1) % points.length] = {
+      newPoints[(angleIndex + 1) % p_len] = {
         x: currentPoint.x + newV2x,
         y: currentPoint.y + newV2y
       };
     } else if (isNextEdgeLocked) {
-      // Nächste Kante ist gesperrt - nur prevPoint bewegen
       const cos = Math.cos(-rotationRad);
       const sin = Math.sin(-rotationRad);
-      
-      // Rotiere v1 um den gewünschten Winkel (in entgegengesetzte Richtung)
       const newV1x = v1.x * cos - v1.y * sin;
       const newV1y = v1.x * sin + v1.y * cos;
-      
-      newPoints[(angleIndex - 1 + points.length) % points.length] = {
+      newPoints[(angleIndex - 1 + p_len) % p_len] = {
         x: currentPoint.x + newV1x,
         y: currentPoint.y + newV1y
       };
     } else {
-      // Keine Kanten sind gesperrt - beide Punkte proportional bewegen
       const halfRotation = rotationRad / 2;
-      
-      // Rotiere v1 um die halbe gewünschte Rotation
       const cos1 = Math.cos(-halfRotation);
       const sin1 = Math.sin(-halfRotation);
       const newV1x = v1.x * cos1 - v1.y * sin1;
       const newV1y = v1.x * sin1 + v1.y * cos1;
-      
-      // Rotiere v2 um die halbe gewünschte Rotation
+
       const cos2 = Math.cos(halfRotation);
       const sin2 = Math.sin(halfRotation);
       const newV2x = v2.x * cos2 - v2.y * sin2;
       const newV2y = v2.x * sin2 + v2.y * cos2;
-      
-      newPoints[(angleIndex - 1 + points.length) % points.length] = {
+
+      newPoints[(angleIndex - 1 + p_len) % p_len] = {
         x: currentPoint.x + newV1x,
         y: currentPoint.y + newV1y
       };
-      
-      newPoints[(angleIndex + 1) % points.length] = {
+      newPoints[(angleIndex + 1) % p_len] = {
         x: currentPoint.x + newV2x,
         y: currentPoint.y + newV2y
       };
     }
-    
+
     setPoints(newPoints);
-    
-    // Sperre diesen Winkel
     setLockedAngles(prev => new Set([...prev, angleIndex]));
-    
-    // Beende die Bearbeitung
     setEditingAngle(null);
     setEditingAngleValue('');
   };
