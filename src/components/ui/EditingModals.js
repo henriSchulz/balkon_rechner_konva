@@ -14,13 +14,36 @@ const EditingModals = ({
 }) => {
   if (editingEdge === null && editingAngle === null) return null;
 
+  const Modal = ({ title, children }) => (
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl p-5 border border-gray-200 w-full max-w-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
+
+  const ActionButtons = ({ onOk, onCancel }) => (
+    <div className="flex justify-end gap-2 mt-4">
+      <button
+        onClick={onCancel}
+        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-md transition-colors duration-200"
+      >
+        Abbrechen
+      </button>
+      <button
+        onClick={onOk}
+        className="px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-md transition-colors duration-200"
+      >
+        OK
+      </button>
+    </div>
+  );
+
   return (
     <>
       {editingEdge !== null && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-green-500 rounded-lg p-4 shadow-2xl z-50">
-          <div className="mb-3 font-semibold text-gray-800 text-sm">
-            Neue Länge eingeben:
-          </div>
+        <Modal title="Länge bearbeiten">
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -28,35 +51,21 @@ const EditingModals = ({
               onChange={(e) => setEditingLength(e.target.value)}
               step="0.1"
               min="0.1"
-              className="w-18 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-accent/80 focus:border-transparent"
               autoFocus
               onKeyPress={(e) => {
                 if (e.key === 'Enter') handleLengthChange(editingLength);
                 else if (e.key === 'Escape') handleLengthCancel();
               }}
             />
-            <span className="text-gray-600 text-sm">m</span>
-            <button
-              onClick={() => handleLengthChange(editingLength)}
-              className="px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors duration-200"
-            >
-              OK
-            </button>
-            <button
-              onClick={handleLengthCancel}
-              className="px-2 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-xs font-medium rounded-md transition-colors duration-200"
-            >
-              Abbrechen
-            </button>
+            <span className="text-gray-600 text-lg">m</span>
           </div>
-        </div>
+          <ActionButtons onOk={() => handleLengthChange(editingLength)} onCancel={handleLengthCancel} />
+        </Modal>
       )}
 
       {editingAngle !== null && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-purple-500 rounded-lg p-4 shadow-2xl z-50">
-          <div className="mb-3 font-semibold text-gray-800 text-sm">
-            Neuen Winkel eingeben:
-          </div>
+        <Modal title="Winkel bearbeiten">
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -65,28 +74,17 @@ const EditingModals = ({
               step="1"
               min="1"
               max="179"
-              className="w-18 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-accent/80 focus:border-transparent"
               autoFocus
               onKeyPress={(e) => {
                 if (e.key === 'Enter') handleAngleChange(editingAngleValue);
                 else if (e.key === 'Escape') handleAngleCancel();
               }}
             />
-            <span className="text-gray-600 text-sm">°</span>
-            <button
-              onClick={() => handleAngleChange(editingAngleValue)}
-              className="px-2 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium rounded-md transition-colors duration-200"
-            >
-              OK
-            </button>
-            <button
-              onClick={handleAngleCancel}
-              className="px-2 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-xs font-medium rounded-md transition-colors duration-200"
-            >
-              Abbrechen
-            </button>
+            <span className="text-gray-600 text-lg">°</span>
           </div>
-        </div>
+          <ActionButtons onOk={() => handleAngleChange(editingAngleValue)} onCancel={handleAngleCancel} />
+        </Modal>
       )}
     </>
   );

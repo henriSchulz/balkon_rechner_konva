@@ -15,23 +15,23 @@ const SettingsPanel = ({
   setLockedAngles,
 }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
-      <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-        <span className="text-blue-500">⚙️</span>
-        Einstellungen
-      </h2>
-      <div className="space-y-3">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Einstellungen</h2>
+      <div className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700">Maßstab (Pixel pro Meter)</label>
+          <label htmlFor="scale-slider" className="block text-sm font-medium text-gray-700">
+            Maßstab
+          </label>
           <div className="flex items-center gap-2 mt-1">
             <input
+              id="scale-slider"
               type="range"
               value={scale}
               onChange={(e) => setScale(Number(e.target.value))}
               min="10"
               max="200"
               step="5"
-              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent"
             />
             <input
               type="number"
@@ -40,53 +40,55 @@ const SettingsPanel = ({
               min="10"
               max="200"
               step="5"
-              className="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-20 px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-accent/80 focus:border-transparent"
             />
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+
+        <div className="space-y-2">
+           <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
             <input
               type="checkbox"
               checked={showLengths}
               onChange={(e) => setShowLengths(e.target.checked)}
-              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              className="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2"
             />
             Längen anzeigen
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
             <input
               type="checkbox"
               checked={snapEnabled}
               onChange={(e) => setSnapEnabled(e.target.checked)}
-              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              className="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2"
             />
-            Snap aktiviert
+            Fang-Funktion
+          </label>
+           <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={showProfiles}
+              onChange={(e) => setShowProfiles(e.target.checked)}
+              className="w-4 h-4 text-accent bg-gray-100 border-gray-300 rounded focus:ring-accent focus:ring-2"
+            />
+            Bodenprofile anzeigen
           </label>
         </div>
-        <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
-          <input
-            type="checkbox"
-            checked={showProfiles}
-            onChange={(e) => setShowProfiles(e.target.checked)}
-            className="w-3 h-3 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-          />
-          Bodenprofile anzeigen
-        </label>
-        <div className="grid grid-cols-2 gap-2">
+
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
           <button
             onClick={() => setLockedEdges(new Set())}
             disabled={lockedEdges.size === 0}
-            className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200"
+            className="w-full px-3 py-1.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-700 text-sm font-medium rounded-md transition-colors duration-200"
           >
-            <span>🔓</span> Kanten ({lockedEdges.size})
+            Kanten entsperren ({lockedEdges.size})
           </button>
           <button
             onClick={() => setLockedAngles(new Set())}
             disabled={lockedAngles.size === 0}
-            className="w-full flex items-center justify-center gap-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors duration-200"
+            className="w-full px-3 py-1.5 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-700 text-sm font-medium rounded-md transition-colors duration-200"
           >
-            <span>🔓</span> Winkel ({lockedAngles.size})
+            Winkel entsperren ({lockedAngles.size})
           </button>
         </div>
       </div>

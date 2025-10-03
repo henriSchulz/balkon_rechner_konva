@@ -37,13 +37,13 @@ const BalkonRechnerPage = () => {
     };
 
     return (
-        <div className="flex justify-center items-start p-4 space-x-4">
+        <div className="flex justify-center items-start space-x-8">
             {/* Main Content: Canvas and UI */}
-            <div className="flex-grow">
+            <div className="flex-grow space-y-4">
                 <InfoPanel errorMessage={errorMessage} />
-                <div className='flex flex-row w-full gap-2'>
+                <div className='flex flex-row w-full gap-4'>
                     <Canvas state={canvasState} handlers={canvasHandlers} />
-                    <ShoppingList profileData={profileData} />
+                     <ShoppingList profileData={profileData} />
                 </div>
             </div>
 
