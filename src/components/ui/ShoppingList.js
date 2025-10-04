@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { addToCart, PRODUCTS } from '../../utils/api';
+import { useLocalization } from '../../hooks/useLocalization';
 
 const ShoppingList = ({ profileData }) => {
+  const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
+
   const handleAddToCart = async () => {
-    // Validiere profileData
     if (!profileData || !profileData.profileCounts || Object.keys(profileData.profileCounts).length === 0) {
-      alert("Bitte zeichne zuerst ein Balkonprofil und setze die Hauswand.");
+      alert(t('shoppingList.validationAlert'));
       return;
     }
 
-    if (isLoading) return; // Verhindere mehrfache Ausführung
+    if (isLoading) return;
     
     setIsLoading(true);
     
@@ -23,7 +25,6 @@ const ShoppingList = ({ profileData }) => {
       let successfulAdds = 0;
       let failedAdds = 0;
 
-      // Verarbeite jedes Profil einzeln, um bessere Fehlerbehandlung zu haben
       for (const [length, count] of Object.entries(profileData.profileCounts)) {
         console.log(`🔍 Verarbeite Profil: ${length}mm, Anzahl: ${count}`);
         
@@ -32,7 +33,6 @@ const ShoppingList = ({ profileData }) => {
           continue;
         }
 
-        // Finde das entsprechende Produkt in der PRODUCTS.S Liste
         const product = PRODUCTS.S.find(p => p.length === parseInt(length));
         
         console.log(`🔍 Gesucht: ${length}mm, Gefunden:`, product);
@@ -51,33 +51,19 @@ const ShoppingList = ({ profileData }) => {
           const result = await addToCart(product.id, count);
           
           console.log(`✅ ${count}x Profil ${length}mm (ID: ${product.id}) erfolgreich hinzugefügt`);
-          results.push({ 
-            success: true, 
-            length, 
-            count, 
-            productId: product.id, 
-            result 
-          });
+          results.push({ success: true, length, count, productId: product.id, result });
           successfulAdds++;
           
         } catch (error) {
           console.error(`❌ Fehler beim Hinzufügen von ${count}x Profil ${length}mm (ID: ${product.id}):`, error);
-          results.push({ 
-            success: false, 
-            length, 
-            count, 
-            productId: product.id, 
-            error: error.message || error.toString() 
-          });
+          results.push({ success: false, length, count, productId: product.id, error: error.message || error.toString() });
           failedAdds++;
         }
       }
 
-      // Zusammenfassung
       console.log(`📋 Zusammenfassung: ${successfulAdds} erfolgreich, ${failedAdds} fehlgeschlagen`);
       console.log('📄 Detaillierte Ergebnisse:', results);
       
-      // WooCommerce Fragment Refresh nur wenn mindestens ein Artikel hinzugefügt wurde
       if (successfulAdds > 0) {
         if (window.jQuery) {
           console.log('🔄 Aktualisiere WooCommerce Warenkorb-Fragment...');
@@ -86,10 +72,11 @@ const ShoppingList = ({ profileData }) => {
       }
       
       if (failedAdds > 0) {
+        const totalAdds = successfulAdds + failedAdds;
         console.warn(`⚠️ ${failedAdds} Profile konnten nicht hinzugefügt werden. Siehe Details oben.`);
-        alert(`Warnung: ${failedAdds} von ${successfulAdds + failedAdds} Profilen konnten nicht hinzugefügt werden. Siehe Browser-Konsole für Details.`);
+        alert(t('shoppingList.warningAlert', { failedAdds, totalAdds }));
       } else if (successfulAdds > 0) {
-        alert(`Erfolgreich: Alle ${successfulAdds} Profile wurden zum Warenkorb hinzugefügt!`);
+        alert(t('shoppingList.successAlert', { successfulAdds }));
       }
       
     } catch (error) {
@@ -104,7 +91,7 @@ const ShoppingList = ({ profileData }) => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 w-full max-w-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-900">
-          Einkaufsliste
+          {t('shoppingList.title')}
         </h3>
       </div>
         <button 
@@ -122,17 +109,17 @@ const ShoppingList = ({ profileData }) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Wird hinzugefügt...
+              {t('shoppingList.addingToCart')}
             </>
           ) : (
             <>
               <i className="icon-shopping-cart"></i>
-              Zum Warenkorb
+              {t('shoppingList.addToCart')}
             </>
           )}
         </button>
       <div className="text-sm text-gray-700">
-        <div className="font-medium mb-2 text-gray-800">Bodenprofile (140mm breit):</div>
+        <div className="font-medium mb-2 text-gray-800">{t('shoppingList.floorProfilesLabel')}</div>
         {Object.keys(profileData.profileCounts).length > 0 ? (
           <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
             {Object.entries(profileData.profileCounts)
@@ -146,8 +133,8 @@ const ShoppingList = ({ profileData }) => {
           </div>
         ) : (
           <div className="text-center text-gray-500 py-4">
-            <p>Keine Profile berechnet</p>
-            <p className="text-xs mt-1">Zeichne erst ein Polygon und setze eine Hauswand</p>
+            <p>{t('shoppingList.noProfilesCalculated')}</p>
+            <p className="text-xs mt-1">{t('shoppingList.drawInstructions')}</p>
           </div>
         )}
       </div>

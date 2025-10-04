@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocalization } from '../../hooks/useLocalization';
 
 const EditingModals = ({
   editingEdge,
@@ -12,6 +13,8 @@ const EditingModals = ({
   handleAngleChange,
   handleAngleCancel,
 }) => {
+  const { t } = useLocalization();
+
   if (editingEdge === null && editingAngle === null) return null;
 
   const Modal = ({ title, children }) => (
@@ -23,19 +26,19 @@ const EditingModals = ({
     </div>
   );
 
-  const ActionButtons = ({ onOk, onCancel }) => (
+  const ActionButtons = ({ onOk, onCancel, okText, cancelText }) => (
     <div className="flex justify-end gap-2 mt-4">
       <button
         onClick={onCancel}
         className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-md transition-colors duration-200"
       >
-        Abbrechen
+        {cancelText}
       </button>
       <button
         onClick={onOk}
         className="px-4 py-2 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-md transition-colors duration-200"
       >
-        OK
+        {okText}
       </button>
     </div>
   );
@@ -43,7 +46,7 @@ const EditingModals = ({
   return (
     <>
       {editingEdge !== null && (
-        <Modal title="Länge bearbeiten">
+        <Modal title={t('editingModals.edge.title')}>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -58,14 +61,19 @@ const EditingModals = ({
                 else if (e.key === 'Escape') handleLengthCancel();
               }}
             />
-            <span className="text-gray-600 text-lg">m</span>
+            <span className="text-gray-600 text-lg">{t('editingModals.edge.unit')}</span>
           </div>
-          <ActionButtons onOk={() => handleLengthChange(editingLength)} onCancel={handleLengthCancel} />
+          <ActionButtons
+            onOk={() => handleLengthChange(editingLength)}
+            onCancel={handleLengthCancel}
+            okText={t('editingModals.edge.confirm')}
+            cancelText={t('editingModals.edge.cancel')}
+          />
         </Modal>
       )}
 
       {editingAngle !== null && (
-        <Modal title="Winkel bearbeiten">
+        <Modal title={t('editingModals.angle.title')}>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -81,9 +89,14 @@ const EditingModals = ({
                 else if (e.key === 'Escape') handleAngleCancel();
               }}
             />
-            <span className="text-gray-600 text-lg">°</span>
+            <span className="text-gray-600 text-lg">{t('editingModals.angle.unit')}</span>
           </div>
-          <ActionButtons onOk={() => handleAngleChange(editingAngleValue)} onCancel={handleAngleCancel} />
+          <ActionButtons
+            onOk={() => handleAngleChange(editingAngleValue)}
+            onCancel={handleAngleCancel}
+            okText={t('editingModals.angle.confirm')}
+            cancelText={t('editingModals.angle.cancel')}
+          />
         </Modal>
       )}
     </>

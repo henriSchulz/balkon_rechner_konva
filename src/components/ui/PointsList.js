@@ -1,20 +1,23 @@
 import React from 'react';
 import { pixelsToMeters } from '../../utils/geometry';
+import { useLocalization } from '../../hooks/useLocalization';
 
 const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints }) => {
+  const { t } = useLocalization();
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-900">
-          Ecken ({points.length})
+          {t('pointsList.title')} ({points.length})
         </h3>
         {points.length > 0 && (
           <button
             onClick={handleClearAllPoints}
             className="px-3 py-1 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors duration-200"
-            title="Alle Punkte löschen"
+            title={t('pointsList.deleteAllTitle')}
           >
-            Alle löschen
+            {t('pointsList.deleteAll')}
           </button>
         )}
       </div>
@@ -23,7 +26,7 @@ const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints }) 
           {points.map((point, index) => (
             <div key={index} className="flex items-center justify-between bg-gray-50 rounded-md p-2 text-sm">
               <div className="flex-1">
-                <div className="font-medium text-gray-800">Ecke {index + 1}</div>
+                <div className="font-medium text-gray-800">{t('pointsList.corner')} {index + 1}</div>
                 <div className="text-gray-600 text-xs">
                   x: {pixelsToMeters(point.x, scale)}m, y: {pixelsToMeters(point.y, scale)}m
                 </div>
@@ -32,15 +35,15 @@ const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints }) 
                 onClick={() => handleDeletePoint(index)}
                 disabled={points.length <= 3}
                 className="ml-2 px-2 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-gray-700 text-xs rounded-md transition-colors duration-200"
-                title={points.length <= 3 ? "Mindestens 3 Punkte erforderlich" : "Punkt löschen"}
+                title={points.length <= 3 ? t('pointsList.deleteDisabledTooltip') : t('pointsList.deleteTooltip')}
               >
-                Löschen
+                {t('pointsList.delete')}
               </button>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-500 text-center py-4">Keine Ecken vorhanden</div>
+        <div className="text-sm text-gray-500 text-center py-4">{t('pointsList.noPoints')}</div>
       )}
     </div>
   );
