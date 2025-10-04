@@ -1,6 +1,7 @@
 // src/utils/profileCalculator.js
 import { BODENPROFILE_LAENGEN_MM, BODENPROFIL_BREITE_MM, RANDABSTAND_MM } from '../constants/profiles.js';
 
+// Die Hilfsfunktionen rotatePoint und x_at_y bleiben unverändert.
 const rotatePoint = (point, angle, origin) => {
     const [px, py] = point;
     const [ox, oy] = origin;
@@ -21,7 +22,7 @@ const x_at_y = (p1, p2, y) => {
 export const calculateProfiles = (allPoints, wallP1, wallP2, scale) => {
   if (allPoints.length < 3) return { profileDetails: [], profileCounts: {} };
 
-  // --- Rotation bleibt gleich: Die Ausrichtung der Dielen wird korrekt gesetzt ---
+  // Die Logik zur Bestimmung der Wandseite und zur Rotation bleibt bestehen.
   const wallVector = [wallP2[0] - wallP1[0], wallP2[1] - wallP1[1]];
   const wallAngle = Math.atan2(wallVector[1], wallVector[0]);
   const rotationAngle = -wallAngle + Math.PI / 2;
@@ -33,6 +34,7 @@ export const calculateProfiles = (allPoints, wallP1, wallP2, scale) => {
   const profileCounts = {};
   const profileDetails = [];
   
+  // Wichtig: `rotatedEdges` muss alle Kanten enthalten, auch die der Löcher.
   const rotatedEdges = rotatedPoints.map((p, i) => [p, rotatedPoints[(i + 1) % rotatedPoints.length]]);
   
   const minY_rot = Math.min(...rotatedPoints.map(p => p[1]));
@@ -44,65 +46,71 @@ export const calculateProfiles = (allPoints, wallP1, wallP2, scale) => {
     const y_start_rot = minY_rot + i * profilBreitePx;
     const y_end_rot = y_start_rot + profilBreitePx;
     
-    // NEUE LOGIK: Finde die tatsächliche MINIMALE und MAXIMALE Ausdehnung des Raumes in dieser Zeile
-    let min_x_for_profil_rot = Infinity;
-    let max_x_for_profil_rot = -Infinity;
+    // --- NEUE LOGIK: Finde alle Segmente pro Zeile ---
+    const y_row_center = y_start_rot + profilBreitePx / 2;
+    const x_intersections = [];
 
+    // 1. Finde alle Schnittpunkte der Raumkanten mit der aktuellen Dielen-Reihe
     for (const edge of rotatedEdges) {
-      let [p1, p2] = edge;
-      if (p1[1] > p2[1]) [p1, p2] = [p2, p1];
+        const [p1, p2] = edge;
+        const [y1, y2] = [p1[1], p2[1]];
 
-      if (p2[1] <= y_start_rot || p1[1] >= y_end_rot) continue;
-      
-      const y_clip_start = Math.max(p1[1], y_start_rot);
-      const y_clip_end = Math.min(p2[1], y_end_rot);
-      
-      const x_start = x_at_y(p1, p2, y_clip_start);
-      const x_end = x_at_y(p1, p2, y_clip_end);
-
-      min_x_for_profil_rot = Math.min(min_x_for_profil_rot, x_start, x_end);
-      max_x_for_profil_rot = Math.max(max_x_for_profil_rot, x_start, x_end);
+        if ((y1 <= y_row_center && y2 > y_row_center) || (y2 <= y_row_center && y1 > y_row_center)) {
+            const x = x_at_y(p1, p2, y_row_center);
+            x_intersections.push(x);
+        }
     }
 
-    if (min_x_for_profil_rot === Infinity) continue;
+    // 2. Sortiere die Schnittpunkte von links nach rechts
+    x_intersections.sort((a, b) => a - b);
 
-    // NEUE LOGIK: Die benötigte Länge ist der volle Abstand zwischen min und max...
-    const totalWidthPx = max_x_for_profil_rot - min_x_for_profil_rot;
-    // ...abzüglich des Randabstands an BEIDEN Seiten.
-    const requiredLengthPx = totalWidthPx - (2 * randabstandPx);
+    // 3. Verarbeite die Schnittpunkte paarweise. Jedes Paar (z.B. 0-1, 2-3) ist ein Segment, das Dielen benötigt.
+    for (let j = 0; j < x_intersections.length; j += 2) {
+        if (j + 1 >= x_intersections.length) continue; // Sollte bei validen Polygonen nicht vorkommen
 
-    if (requiredLengthPx <= 0) continue;
+        const min_x_segment = x_intersections[j];
+        const max_x_segment = x_intersections[j + 1];
 
-    const requiredLengthMM = (requiredLengthPx / scale) * 1000;
-    const laenge = BODENPROFILE_LAENGEN_MM.find(l => l >= requiredLengthMM) || BODENPROFILE_LAENGEN_MM[BODENPROFILE_LAENGEN_MM.length - 1];
-    
-    if (laenge) {
-      profileCounts[laenge] = (profileCounts[laenge] || 0) + 1;
+        // --- Wende die Berechnungslogik nun auf jedes einzelne Segment an ---
+        const segmentWidthPx = max_x_segment - min_x_segment;
+        
+        // Für eine robuste Lösung bei Löchern wird der Randabstand an BEIDEN Seiten des Segments angewendet.
+        // Dies stellt sicher, dass auch an den Kanten des Ausschnitts ein korrekter Abstand bleibt.
+        const requiredLengthPx = segmentWidthPx - (2 * randabstandPx);
 
-      const chosenLengthPx = (laenge / 1000) * scale;
-      
-      // NEUE LOGIK: Platziere die Diele basierend auf min/max und den Abständen
-      // Annahme: Die Dielen werden rechtsbündig verlegt (Abschnitt links)
-      const startX_used_rot = min_x_for_profil_rot + randabstandPx;
-      const endX_used_rot = max_x_for_profil_rot - randabstandPx;
-      const startX_full_rot = endX_used_rot - chosenLengthPx;
+        if (requiredLengthPx <= 0) continue;
 
-      const corners_full_rot = [
-        [startX_full_rot, y_start_rot], [endX_used_rot, y_start_rot],
-        [endX_used_rot, y_end_rot], [startX_full_rot, y_end_rot],
-      ];
-      
-      const corners_used_rot = [
-        [startX_used_rot, y_start_rot], [endX_used_rot, y_start_rot],
-        [endX_used_rot, y_end_rot], [startX_used_rot, y_end_rot],
-      ];
+        const requiredLengthMM = (requiredLengthPx / scale) * 1000;
+        const laenge = BODENPROFILE_LAENGEN_MM.find(l => l >= requiredLengthMM) || BODENPROFILE_LAENGEN_MM[BODENPROFILE_LAENGEN_MM.length - 1];
+        
+        if (laenge) {
+          profileCounts[laenge] = (profileCounts[laenge] || 0) + 1;
 
-      const inverseRotationAngle = -rotationAngle;
-      profileDetails.push({
-          full: corners_full_rot.map(p => rotatePoint(p, inverseRotationAngle, wallP1)),
-          used: corners_used_rot.map(p => rotatePoint(p, inverseRotationAngle, wallP1)),
-          chosenLengthMM: laenge,
-      });
+          const chosenLengthPx = (laenge / 1000) * scale;
+          
+          // Wir verwenden hier eine konsistente Platzierungsstrategie (z.B. rechtsbündig wie im Original).
+          // Der Überstand ist nun innerhalb des Segments.
+          const startX_used_rot = min_x_segment + randabstandPx;
+          const endX_used_rot = max_x_segment - randabstandPx;
+          const startX_full_rot = endX_used_rot - chosenLengthPx;
+
+          const corners_full_rot = [
+            [startX_full_rot, y_start_rot], [endX_used_rot, y_start_rot],
+            [endX_used_rot, y_end_rot], [startX_full_rot, y_end_rot],
+          ];
+          
+          const corners_used_rot = [
+            [startX_used_rot, y_start_rot], [endX_used_rot, y_start_rot],
+            [endX_used_rot, y_end_rot], [startX_used_rot, y_end_rot],
+          ];
+
+          const inverseRotationAngle = -rotationAngle;
+          profileDetails.push({
+              full: corners_full_rot.map(p => rotatePoint(p, inverseRotationAngle, wallP1)),
+              used: corners_used_rot.map(p => rotatePoint(p, inverseRotationAngle, wallP1)),
+              chosenLengthMM: laenge,
+          });
+        }
     }
   }
 
