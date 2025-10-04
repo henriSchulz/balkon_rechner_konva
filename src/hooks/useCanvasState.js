@@ -9,49 +9,69 @@ import { getSnappedPos } from '../utils/snap';
 import { calculateProfiles } from '../utils/profiles';
 import { DEFAULT_SCALE } from '../constants/canvas';
 
+// Helper function to load state from localStorage, executed only once
+const getInitialState = () => {
+    try {
+        const savedState = localStorage.getItem('canvasState');
+        if (savedState) {
+            const restored = JSON.parse(savedState);
+            return {
+                points: restored.points || [],
+                snapEnabled: restored.snapEnabled !== false,
+                hauswandEdges: restored.hauswandEdges || [],
+                scale: restored.scale || DEFAULT_SCALE,
+                showLengths: restored.showLengths !== false,
+                lockedEdges: new Set(restored.lockedEdges || []),
+                lockedAngles: new Set(restored.lockedAngles || []),
+                showProfiles: restored.showProfiles !== false,
+            };
+        }
+    } catch (e) {
+        console.error("Failed to parse or restore canvas state:", e);
+    }
+    // Return default state if nothing is saved or an error occurs
+    return {
+        points: [],
+        snapEnabled: true,
+        hauswandEdges: [],
+        scale: DEFAULT_SCALE,
+        showLengths: true,
+        lockedEdges: new Set(),
+        lockedAngles: new Set(),
+        showProfiles: true,
+    };
+};
+
 export const useCanvasState = () => {
-    const [points, setPoints] = useState([]);
-    const [snapEnabled, setSnapEnabled] = useState(true);
+    // Initialize state from localStorage using a function to ensure it runs only once
+    const [initialState] = useState(getInitialState);
+
+    const [points, setPoints] = useState(initialState.points);
+    const [snapEnabled, setSnapEnabled] = useState(initialState.snapEnabled);
     const [hoveredEdgeIndex, setHoveredEdgeIndex] = useState(null);
-    const [hauswandEdges, setHauswandEdges] = useState([]);
-    const [scale, setScale] = useState(DEFAULT_SCALE);
-    const [showLengths, setShowLengths] = useState(true);
+    const [hauswandEdges, setHauswandEdges] = useState(initialState.hauswandEdges);
+    const [scale, setScale] = useState(initialState.scale);
+    const [showLengths, setShowLengths] = useState(initialState.showLengths);
     const [editingEdge, setEditingEdge] = useState(null);
     const [editingLength, setEditingLength] = useState('');
-    const [lockedEdges, setLockedEdges] = useState(new Set());
+    const [lockedEdges, setLockedEdges] = useState(initialState.lockedEdges);
     const [editingAngle, setEditingAngle] = useState(null);
     const [editingAngleValue, setEditingAngleValue] = useState('');
-    const [lockedAngles, setLockedAngles] = useState(new Set());
+    const [lockedAngles, setLockedAngles] = useState(initialState.lockedAngles);
     const [errorMessage, setErrorMessage] = useState('');
     const [cursorPos, setCursorPos] = useState(null);
     const [snapLines, setSnapLines] = useState([]);
-    const [showProfiles, setShowProfiles] = useState(true);
+    const [showProfiles, setShowProfiles] = useState(initialState.showProfiles);
     const dragStartPoints = useRef(null);
+    const isInitialMount = useRef(true);
 
     useEffect(() => {
-        const savedState = localStorage.getItem('canvasState');
-        if (savedState) {
-            try {
-                const restoredState = JSON.parse(savedState);
-                if (restoredState) {
-                    setPoints(restoredState.points || []);
-                    setSnapEnabled(restoredState.snapEnabled !== false);
-                    setHauswandEdges(restoredState.hauswandEdges || []);
-                    setScale(restoredState.scale || DEFAULT_SCALE);
-                    setShowLengths(restoredState.showLengths !== false);
-                    setLockedEdges(new Set(restoredState.lockedEdges || []));
-                    setLockedAngles(new Set(restoredState.lockedAngles || []));
-                    setShowProfiles(restoredState.showProfiles !== false);
-                }
-            } catch (e) {
-                console.error("Failed to parse canvas state from localStorage", e);
-                // Optionally clear the corrupted state
-                // localStorage.removeItem('canvasState');
-            }
+        // Prevent saving to localStorage on the initial render
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
         }
-    }, []); // Empty dependency array ensures this runs only once on mount
 
-    useEffect(() => {
         const stateToSave = {
             points,
             snapEnabled,
