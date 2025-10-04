@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
     getAngle,
     metersToPixels,
@@ -27,6 +27,43 @@ export const useCanvasState = () => {
     const [snapLines, setSnapLines] = useState([]);
     const [showProfiles, setShowProfiles] = useState(true);
     const dragStartPoints = useRef(null);
+
+    useEffect(() => {
+        const savedState = localStorage.getItem('canvasState');
+        if (savedState) {
+            try {
+                const restoredState = JSON.parse(savedState);
+                if (restoredState) {
+                    setPoints(restoredState.points || []);
+                    setSnapEnabled(restoredState.snapEnabled !== false);
+                    setHauswandEdges(restoredState.hauswandEdges || []);
+                    setScale(restoredState.scale || DEFAULT_SCALE);
+                    setShowLengths(restoredState.showLengths !== false);
+                    setLockedEdges(new Set(restoredState.lockedEdges || []));
+                    setLockedAngles(new Set(restoredState.lockedAngles || []));
+                    setShowProfiles(restoredState.showProfiles !== false);
+                }
+            } catch (e) {
+                console.error("Failed to parse canvas state from localStorage", e);
+                // Optionally clear the corrupted state
+                // localStorage.removeItem('canvasState');
+            }
+        }
+    }, []); // Empty dependency array ensures this runs only once on mount
+
+    useEffect(() => {
+        const stateToSave = {
+            points,
+            snapEnabled,
+            hauswandEdges,
+            scale,
+            showLengths,
+            lockedEdges: Array.from(lockedEdges),
+            lockedAngles: Array.from(lockedAngles),
+            showProfiles,
+        };
+        localStorage.setItem('canvasState', JSON.stringify(stateToSave));
+    }, [points, snapEnabled, hauswandEdges, scale, showLengths, lockedEdges, lockedAngles, showProfiles]);
 
     const handleStageClick = (e) => {
         const isStage = e.target.getStage() === e.target;
