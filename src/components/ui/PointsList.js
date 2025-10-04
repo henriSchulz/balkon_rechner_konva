@@ -20,7 +20,7 @@ const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints, is
         </button>
       </div>
       {points.length > 0 ? (
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+        <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
           {points.map((point, index) => (
             <div key={index} className="flex items-center justify-between bg-gray-50 rounded-md p-2 text-sm">
               <div className="flex-1">

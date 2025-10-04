@@ -41,6 +41,7 @@ const Canvas = ({ state, handlers }) => {
     snapEnabled,
     setSnapLines,
     setHoveredPointIndex,
+    handleStageContextMenu,
   } = handlers;
 
   const { getSnappedPos } = require('../../utils/snap');
@@ -59,6 +60,7 @@ const Canvas = ({ state, handlers }) => {
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           onClick={handleStageClick}
+          onContextMenu={handleStageContextMenu}
           onMouseMove={(e) => {
             const stage = e.target.getStage();
             const pos = stage.getPointerPosition();

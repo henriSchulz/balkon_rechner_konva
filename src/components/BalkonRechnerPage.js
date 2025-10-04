@@ -6,6 +6,7 @@ import PointsList from './ui/PointsList';
 import ResultsPanel from './ui/ResultsPanel';
 import ShoppingList from './ui/ShoppingList';
 import EditingModals from './ui/EditingModals';
+import ContextMenu from './ui/ContextMenu';
 import Canvas from './canvas/Canvas';
 import DrawingActions from './ui/DrawingActions';
 import EditingControls from './ui/EditingControls';
@@ -18,13 +19,13 @@ const BalkonRechnerPage = () => {
         hoveredPointIndex, setHoveredPointIndex, hauswandEdges, scale, showLengths,
         editingEdge, editingLength, setEditingLength, lockedEdges, editingAngle, editingAngleValue,
         setEditingAngleValue, lockedAngles, errorMessage, cursorPos, setCursorPos, snapLines,
-        setSnapLines, showProfiles,
+        setSnapLines, showProfiles, contextMenu,
 
         // Handlers
         handleStageClick, handleHauswandSetzen, handleClearHauswand, handleLengthClick, handleAngleClick,
         handleLengthChange, handleAngleChange, handleAngleCancel, handleLengthCancel, handleUnlockEdge,
         handleUnlockAngle, handleDeletePoint, handleClearAllPoints, handleDragStart, handleDragMove, handleDragEnd,
-        handleUndo,
+        handleUndo, handleStageContextMenu, handleCloseContextMenu,
 
         // Derived Data
         angles, polygonArea, profileData
@@ -38,18 +39,18 @@ const BalkonRechnerPage = () => {
     const canvasHandlers = {
         handleLengthClick, handleUnlockEdge, setHoveredEdgeIndex, handleHauswandSetzen, handleClearHauswand,
         handleStageClick, handleDragStart, handleDragMove, handleDragEnd, handleAngleClick, handleUnlockAngle,
-        setCursorPos, setSnapLines, snapEnabled, setHoveredPointIndex
+        setCursorPos, setSnapLines, snapEnabled, setHoveredPointIndex, handleStageContextMenu
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
             {/* Bedienungshinweise ganz oben */}
             <InfoPanel errorMessage={errorMessage} />
             
             {/* Hauptinhalt: Einkaufsliste, Canvas, Sidebar */}
             <div className="flex justify-center items-start space-x-6">
                 {/* Einkaufsliste links */}
-                <div className="w-64 flex-shrink-0">
+                <div className="w-70 flex-shrink-0">
                     <ShoppingList profileData={profileData} />
                 </div>
 
@@ -59,7 +60,7 @@ const BalkonRechnerPage = () => {
                 </div>
 
                 {/* Sidebar rechts */}
-                <div className="w-60 flex-shrink-0 space-y-4">
+                <div className="w-80 flex-shrink-0 space-y-4">
                     {isDrawing && points.length > 0 && (
                         <DrawingActions
                             points={points}
@@ -102,6 +103,16 @@ const BalkonRechnerPage = () => {
                 setEditingAngleValue={setEditingAngleValue}
                 handleAngleChange={handleAngleChange}
                 handleAngleCancel={handleAngleCancel}
+            />
+
+            {/* Context Menu */}
+            <ContextMenu
+                visible={contextMenu.visible}
+                x={contextMenu.x}
+                y={contextMenu.y}
+                pointIndex={contextMenu.pointIndex}
+                handleDeletePoint={handleDeletePoint}
+                handleCloseContextMenu={handleCloseContextMenu}
             />
         </div>
     );

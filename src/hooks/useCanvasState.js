@@ -65,6 +65,7 @@ export const useCanvasState = () => {
     const [cursorPos, setCursorPos] = useState(null);
     const [snapLines, setSnapLines] = useState([]);
     const [showProfiles, setShowProfiles] = useState(initialState.showProfiles);
+    const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, pointIndex: null });
     const dragStartPoints = useRef(null);
     const isInitialMount = useRef(true);
 
@@ -178,6 +179,17 @@ export const useCanvasState = () => {
     }, [points, snapEnabled, hauswandEdges, scale, showLengths, lockedEdges, lockedAngles, showProfiles]);
 
     const handleStageClick = (e) => {
+        // Only handle left-clicks to avoid interfering with context menu
+        if (e.evt.button !== 0) {
+            return;
+        }
+
+        // If context menu is visible, the click should only close it and do nothing else.
+        if (contextMenu.visible) {
+            handleCloseContextMenu();
+            return;
+        }
+
         // Im Zeichenmodus: normaler Punktplatzierungs-Workflow
         if (isDrawing) {
             // Check if the click is on the first point to close the polygon
@@ -227,6 +239,52 @@ export const useCanvasState = () => {
             // Update locked edges and angles indices nach dem Einfügen
             updateLockedIndicesAfterInsertion(insertIndex);
             return;
+        }
+    };
+
+    const handleCloseContextMenu = () => {
+        setContextMenu({ visible: false, x: 0, y: 0, pointIndex: null });
+    };
+
+    const findPointAtPosition = (pos, points) => {
+        // Check points in reverse order so we get the one on top if they overlap
+        for (let i = points.length - 1; i >= 0; i--) {
+            const point = points[i];
+            const distance = getDistance(pos, point);
+            // Using a radius of 10px for hit detection
+            if (distance < 10) {
+                return i;
+            }
+        }
+        return null;
+    };
+
+    const handleStageContextMenu = (e) => {
+        e.evt.preventDefault();
+        if (!isEditing) return;
+
+        // Close any other open menus/modals
+        handleLengthCancel();
+        handleAngleCancel();
+
+        const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
+        const pointIndex = findPointAtPosition(pos, points);
+
+        if (pointIndex !== null) {
+            const containerRect = stage.container().getBoundingClientRect();
+            const contextMenuX = containerRect.left + pos.x;
+            const contextMenuY = containerRect.top + pos.y;
+
+            setContextMenu({
+                visible: true,
+                x: contextMenuX,
+                y: contextMenuY,
+                pointIndex: pointIndex
+            });
+        } else {
+            // If no point is clicked, ensure the context menu is closed.
+            handleCloseContextMenu();
         }
     };
 
@@ -408,6 +466,7 @@ export const useCanvasState = () => {
 
         const newPoints = points.filter((_, index) => index !== pointIndex);
         setPoints(newPoints);
+        handleCloseContextMenu(); // Close context menu after deleting
 
         const newLockedEdges = new Set();
         lockedEdges.forEach(edgeIndex => {
@@ -586,9 +645,12 @@ export const useCanvasState = () => {
         setSnapLines,
         showProfiles,
         setShowProfiles,
+        contextMenu,
 
         // Handlers
         handleStageClick,
+        handleStageContextMenu,
+        handleCloseContextMenu,
         handleHauswandSetzen,
         handleClearHauswand,
         handleLengthClick,
