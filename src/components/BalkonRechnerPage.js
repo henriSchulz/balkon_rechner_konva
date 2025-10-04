@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCanvasState } from '../hooks/useCanvasState';
+import { useLocalization } from '../hooks/useLocalization';
 import InfoPanel from './ui/InfoPanel';
 import PointsList from './ui/PointsList';
 import ResultsPanel from './ui/ResultsPanel';
@@ -7,11 +8,13 @@ import ShoppingList from './ui/ShoppingList';
 import EditingModals from './ui/EditingModals';
 import Canvas from './canvas/Canvas';
 import DrawingActions from './ui/DrawingActions';
+import EditingControls from './ui/EditingControls';
 
 const BalkonRechnerPage = () => {
+    const { t } = useLocalization();
     const {
         // State
-        points, isDrawing, setIsDrawing, snapEnabled, hoveredEdgeIndex, setHoveredEdgeIndex,
+        points, isDrawing, setIsDrawing, isEditing, setIsEditing, snapEnabled, hoveredEdgeIndex, setHoveredEdgeIndex,
         hoveredPointIndex, setHoveredPointIndex, hauswandEdges, scale, showLengths,
         editingEdge, editingLength, setEditingLength, lockedEdges, editingAngle, editingAngleValue,
         setEditingAngleValue, lockedAngles, errorMessage, cursorPos, setCursorPos, snapLines,
@@ -29,7 +32,7 @@ const BalkonRechnerPage = () => {
 
     const canvasState = {
         points, scale, lockedEdges, hoveredEdgeIndex, hauswandEdges, showLengths, angles, lockedAngles,
-        snapLines, cursorPos, showProfiles, profileData, snapEnabled, isDrawing, hoveredPointIndex
+        snapLines, cursorPos, showProfiles, profileData, snapEnabled, isDrawing, hoveredPointIndex, isEditing
     };
 
     const canvasHandlers = {
@@ -64,6 +67,17 @@ const BalkonRechnerPage = () => {
                             setIsDrawing={setIsDrawing}
                         />
                     )}
+                    {isEditing && <EditingControls setIsEditing={setIsEditing} />}
+                    {!isDrawing && points.length >= 3 && !isEditing && (
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md transition-colors duration-200"
+                            >
+                                {t('editingControls.editDrawing')}
+                            </button>
+                        </div>
+                    )}
                     {points.length >= 3 && <ResultsPanel polygonArea={polygonArea} />}
                     <PointsList
                         points={points}
@@ -71,6 +85,7 @@ const BalkonRechnerPage = () => {
                         handleDeletePoint={handleDeletePoint}
                         handleClearAllPoints={handleClearAllPoints}
                         isDrawing={isDrawing}
+                        isEditing={isEditing}
                     />
                 </div>
             </div>

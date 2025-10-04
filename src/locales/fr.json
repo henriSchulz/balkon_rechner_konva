@@ -30,6 +30,10 @@
   "drawingControls.undo": "Annuler",
   "drawingControls.finishDrawing": "Terminer le dessin",
 
+  "editingControls.title": "Mode d'édition",
+  "editingControls.finishEditing": "Terminer l'édition",
+  "editingControls.editDrawing": "Modifier le dessin",
+
   "shoppingList.title": "Liste de courses",
   "shoppingList.profileType": "Type de profilé",
   "shoppingList.count": "Quantité",

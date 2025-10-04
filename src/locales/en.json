@@ -30,6 +30,10 @@
   "drawingControls.undo": "Undo",
   "drawingControls.finishDrawing": "Finish Drawing",
 
+  "editingControls.title": "Editing Mode",
+  "editingControls.finishEditing": "Finish Editing",
+  "editingControls.editDrawing": "Edit Drawing",
+
   "shoppingList.title": "Shopping List",
   "shoppingList.profileType": "Profile type",
   "shoppingList.count": "Count",

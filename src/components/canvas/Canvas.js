@@ -22,6 +22,7 @@ const Canvas = ({ state, handlers }) => {
     profileData,
     isDrawing,
     hoveredPointIndex,
+    isEditing,
   } = state;
 
   const {
@@ -101,6 +102,7 @@ const Canvas = ({ state, handlers }) => {
             handleHauswandSetzen={handleHauswandSetzen}
             handleClearHauswand={handleClearHauswand}
             handleStageClick={handleStageClick}
+            isEditing={isEditing}
           />
           <InteractionLayer
             points={points}
@@ -116,6 +118,7 @@ const Canvas = ({ state, handlers }) => {
             cursorPos={cursorPos}
             scale={scale}
             isDrawing={isDrawing}
+            isEditing={isEditing}
             hoveredPointIndex={hoveredPointIndex}
             setHoveredPointIndex={setHoveredPointIndex}
             handleStageClick={handleStageClick}

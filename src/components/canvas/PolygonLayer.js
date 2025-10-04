@@ -15,6 +15,7 @@ const PolygonLayer = ({
   handleHauswandSetzen,
   handleClearHauswand,
   handleStageClick,
+  isEditing,
 }) => {
   if (points.length < 2) return null;
 
@@ -75,22 +76,24 @@ const PolygonLayer = ({
                 y={textY}
                 rotation={normalizedAngle}
                 onClick={(e) => {
-                  e.evt.stopPropagation();
-                  if (isLocked) handleUnlockEdge(i);
-                  else if (isEditable) handleLengthClick(i, lengthInMeters);
+                  if (isEditing) {
+                    e.evt.stopPropagation();
+                    if (isLocked) handleUnlockEdge(i);
+                    else if (isEditable) handleLengthClick(i, lengthInMeters);
+                  }
                 }}
               >
                 <Rect
                   x={-22} y={-7} width={44} height={14}
-                  fill={isLocked ? "rgba(220,220,220,0.95)" : (!isEditable ? "rgba(255,100,100,0.95)" : "rgba(255,255,255,0.95)")}
-                  stroke={isLocked ? "#999" : (!isEditable ? "#ff4444" : "#4CAF50")}
+                  fill={isLocked ? "rgba(220,220,220,0.95)" : (!isEditable ? "rgba(255,100,100,0.95)" : (isEditing ? "rgba(255,255,255,0.95)" : "rgba(240,240,240,0.8)"))}
+                  stroke={isLocked ? "#999" : (!isEditable ? "#ff4444" : (isEditing ? "#4CAF50" : "#ccc"))}
                   strokeWidth={1}
                   cornerRadius={7}
                 />
                 <Text
                   text={isLocked ? `🔒${lengthInMeters}m` : (!isEditable ? `🚫${lengthInMeters}m` : `${lengthInMeters}m`)}
                   fontSize={10}
-                  fill={isLocked ? "#666" : (!isEditable ? "white" : "#333")}
+                  fill={isLocked ? "#666" : (!isEditable ? "white" : (isEditing ? "#333" : "#888"))}
                   offsetX={isLocked ? 22 : (!isEditable ? 22 : 18)}
                   offsetY={5}
                 />

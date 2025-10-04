@@ -30,6 +30,10 @@
   "drawingControls.undo": "Rückgängig",
   "drawingControls.finishDrawing": "Zeichnung beenden",
 
+  "editingControls.title": "Bearbeitungsmodus",
+  "editingControls.finishEditing": "Bearbeitung beenden",
+  "editingControls.editDrawing": "Zeichnung bearbeiten",
+
   "shoppingList.title": "Einkaufsliste",
   "shoppingList.profileType": "Profiltyp",
   "shoppingList.count": "Anzahl",

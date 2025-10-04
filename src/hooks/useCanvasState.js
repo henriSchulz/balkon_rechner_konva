@@ -48,6 +48,7 @@ export const useCanvasState = () => {
 
     const [points, setPoints] = useState(initialState.points);
     const [isDrawing, setIsDrawing] = useState(initialState.points.length === 0);
+    const [isEditing, setIsEditing] = useState(false);
     const [snapEnabled, setSnapEnabled] = useState(initialState.snapEnabled);
     const [hoveredEdgeIndex, setHoveredEdgeIndex] = useState(null);
     const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
@@ -326,6 +327,7 @@ export const useCanvasState = () => {
         setLockedAngles(new Set());
         setHauswandEdges([]);
         setIsDrawing(true);
+        setIsEditing(false);
     };
 
     const checkIfMoveAllowed = (pointIndex) => {
@@ -413,6 +415,8 @@ export const useCanvasState = () => {
         points,
         isDrawing,
         setIsDrawing,
+        isEditing,
+        setIsEditing,
         snapEnabled,
         setSnapEnabled,
         hoveredEdgeIndex,
