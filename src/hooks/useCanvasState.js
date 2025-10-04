@@ -47,8 +47,10 @@ export const useCanvasState = () => {
     const [initialState] = useState(getInitialState);
 
     const [points, setPoints] = useState(initialState.points);
+    const [isDrawing, setIsDrawing] = useState(initialState.points.length === 0);
     const [snapEnabled, setSnapEnabled] = useState(initialState.snapEnabled);
     const [hoveredEdgeIndex, setHoveredEdgeIndex] = useState(null);
+    const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
     const [hauswandEdges, setHauswandEdges] = useState(initialState.hauswandEdges);
     const [scale, setScale] = useState(initialState.scale);
     const [showLengths, setShowLengths] = useState(initialState.showLengths);
@@ -86,6 +88,15 @@ export const useCanvasState = () => {
     }, [points, snapEnabled, hauswandEdges, scale, showLengths, lockedEdges, lockedAngles, showProfiles]);
 
     const handleStageClick = (e) => {
+        if (!isDrawing) return;
+
+        // Check if the click is on the first point to close the polygon
+        if (hoveredPointIndex === 0 && points.length > 2) {
+            setIsDrawing(false);
+            setHoveredPointIndex(null); // Reset hover state
+            return;
+        }
+
         const isStage = e.target.getStage() === e.target;
         const isPolygonFill = e.target.className === 'Line' && e.target.fill();
         if (!isStage && !isPolygonFill) return;
@@ -303,11 +314,18 @@ export const useCanvasState = () => {
         setHauswandEdges(newHauswandEdges);
     };
 
+    const handleUndo = () => {
+        if (isDrawing && points.length > 0) {
+            setPoints(points.slice(0, -1));
+        }
+    };
+
     const handleClearAllPoints = () => {
         setPoints([]);
         setLockedEdges(new Set());
         setLockedAngles(new Set());
         setHauswandEdges([]);
+        setIsDrawing(true);
     };
 
     const checkIfMoveAllowed = (pointIndex) => {
@@ -393,10 +411,14 @@ export const useCanvasState = () => {
     return {
         // State
         points,
+        isDrawing,
+        setIsDrawing,
         snapEnabled,
         setSnapEnabled,
         hoveredEdgeIndex,
         setHoveredEdgeIndex,
+        hoveredPointIndex,
+        setHoveredPointIndex,
         hauswandEdges,
         scale,
         setScale,
@@ -434,6 +456,7 @@ export const useCanvasState = () => {
         handleUnlockAngle,
         handleDeletePoint,
         handleClearAllPoints,
+        handleUndo,
         handleDragStart,
         handleDragMove,
         handleDragEnd,

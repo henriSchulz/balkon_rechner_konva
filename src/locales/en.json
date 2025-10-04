@@ -19,9 +19,16 @@
   "pointsList.delete": "Delete",
   "pointsList.corner": "Corner",
   "pointsList.deleteAllTitle": "Delete all points",
-  "pointsList.deleteDisabledTooltip": "At least 3 points required",
+  "pointsList.deleteDisabledTooltip": "Cannot delete with less than 4 points or while in drawing mode.",
   "pointsList.deleteTooltip": "Delete point",
   "pointsList.noPoints": "No points available",
+  "pointsList.undo": "Undo",
+  "pointsList.undoTitle": "Remove last point",
+
+  "drawingControls.title": "Drawing Tools",
+  "drawingControls.newDrawing": "New Drawing",
+  "drawingControls.undo": "Undo",
+  "drawingControls.finishDrawing": "Finish Drawing",
 
   "shoppingList.title": "Shopping List",
   "shoppingList.profileType": "Profile type",

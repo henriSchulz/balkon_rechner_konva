@@ -2,7 +2,7 @@ import React from 'react';
 import { pixelsToMeters } from '../../utils/geometry';
 import { useLocalization } from '../../hooks/useLocalization';
 
-const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints }) => {
+const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints, isDrawing }) => {
   const { t } = useLocalization();
 
   return (
@@ -11,15 +11,13 @@ const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints }) 
         <h3 className="text-lg font-semibold text-gray-900">
           {t('pointsList.title')} ({points.length})
         </h3>
-        {points.length > 0 && (
-          <button
-            onClick={handleClearAllPoints}
-            className="px-3 py-1 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors duration-200"
-            title={t('pointsList.deleteAllTitle')}
-          >
-            {t('pointsList.deleteAll')}
-          </button>
-        )}
+        <button
+          onClick={handleClearAllPoints}
+          className={`px-3 py-1 bg-accent hover:bg-accent/90 text-white text-xs font-medium rounded-md transition-colors duration-200 ${isDrawing && points.length > 0 ? 'hidden' : ''}`}
+          title={t('drawingControls.newDrawing')}
+        >
+          {t('drawingControls.newDrawing')}
+        </button>
       </div>
       {points.length > 0 ? (
         <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
@@ -33,9 +31,9 @@ const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints }) 
               </div>
               <button
                 onClick={() => handleDeletePoint(index)}
-                disabled={points.length <= 3}
+                disabled={points.length <= 3 || isDrawing}
                 className="ml-2 px-2 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-gray-700 text-xs rounded-md transition-colors duration-200"
-                title={points.length <= 3 ? t('pointsList.deleteDisabledTooltip') : t('pointsList.deleteTooltip')}
+                title={(points.length <= 3 || isDrawing) ? t('pointsList.deleteDisabledTooltip') : t('pointsList.deleteTooltip')}
               >
                 {t('pointsList.delete')}
               </button>

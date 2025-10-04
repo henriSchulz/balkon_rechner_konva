@@ -20,6 +20,8 @@ const Canvas = ({ state, handlers }) => {
     cursorPos,
     showProfiles,
     profileData,
+    isDrawing,
+    hoveredPointIndex,
   } = state;
 
   const {
@@ -36,7 +38,8 @@ const Canvas = ({ state, handlers }) => {
     handleUnlockAngle,
     setCursorPos,
     snapEnabled,
-    setSnapLines
+    setSnapLines,
+    setHoveredPointIndex,
   } = handlers;
 
   const { getSnappedPos } = require('../../utils/snap');
@@ -45,7 +48,11 @@ const Canvas = ({ state, handlers }) => {
     <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4 inline-block">
       <div
         className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-x-auto overflow-y-auto"
-        style={{ width: CANVAS_VIEWPORT_WIDTH, height: CANVAS_VIEWPORT_HEIGHT }}
+        style={{
+          width: CANVAS_VIEWPORT_WIDTH,
+          height: CANVAS_VIEWPORT_HEIGHT,
+          cursor: isDrawing ? 'crosshair' : 'default'
+        }}
       >
         <Stage
           width={CANVAS_WIDTH}
@@ -54,7 +61,16 @@ const Canvas = ({ state, handlers }) => {
           onMouseMove={(e) => {
             const stage = e.target.getStage();
             const pos = stage.getPointerPosition();
-            if (snapEnabled && points.length > 0) {
+
+            // Set cursor style on the stage
+            const shape = e.target;
+            if (shape.getClassName() === 'Circle' || (shape.getClassName() === 'Text' && !isDrawing)) {
+              stage.container().style.cursor = 'pointer';
+            } else {
+              stage.container().style.cursor = isDrawing ? 'crosshair' : 'default';
+            }
+
+            if (snapEnabled && points.length > 0 && isDrawing) {
               const lastPoint = points[points.length - 1];
               const snappedPos = getSnappedPos(pos, points, lastPoint, scale, setSnapLines);
               setCursorPos(snappedPos);
@@ -62,7 +78,13 @@ const Canvas = ({ state, handlers }) => {
               setCursorPos(pos);
             }
           }}
-          onMouseLeave={() => setCursorPos(null)}
+          onMouseLeave={(e) => {
+            setCursorPos(null);
+            const stage = e.target.getStage();
+            if (stage) {
+              stage.container().style.cursor = 'default';
+            }
+          }}
         >
           <GridLayer width={CANVAS_WIDTH} height={CANVAS_HEIGHT} scale={scale} />
           <ProfilesLayer showProfiles={showProfiles} profileData={profileData} />
@@ -93,6 +115,10 @@ const Canvas = ({ state, handlers }) => {
             snapLines={snapLines}
             cursorPos={cursorPos}
             scale={scale}
+            isDrawing={isDrawing}
+            hoveredPointIndex={hoveredPointIndex}
+            setHoveredPointIndex={setHoveredPointIndex}
+            handleStageClick={handleStageClick}
           />
         </Stage>
       </div>

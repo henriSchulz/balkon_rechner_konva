@@ -19,9 +19,16 @@
   "pointsList.delete": "Löschen",
   "pointsList.corner": "Ecke",
   "pointsList.deleteAllTitle": "Alle Punkte löschen",
-  "pointsList.deleteDisabledTooltip": "Mindestens 3 Punkte erforderlich",
+  "pointsList.deleteDisabledTooltip": "Löschen deaktiviert, wenn weniger als 4 Punkte vorhanden sind oder der Zeichenmodus aktiv ist.",
   "pointsList.deleteTooltip": "Punkt löschen",
   "pointsList.noPoints": "Keine Punkte vorhanden",
+  "pointsList.undo": "Rückgängig",
+  "pointsList.undoTitle": "Letzten Punkt entfernen",
+
+  "drawingControls.title": "Zeichenwerkzeuge",
+  "drawingControls.newDrawing": "Neue Zeichnung",
+  "drawingControls.undo": "Rückgängig",
+  "drawingControls.finishDrawing": "Zeichnung beenden",
 
   "shoppingList.title": "Einkaufsliste",
   "shoppingList.profileType": "Profiltyp",
