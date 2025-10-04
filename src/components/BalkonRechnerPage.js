@@ -43,14 +43,14 @@ const BalkonRechnerPage = () => {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
             {/* Bedienungshinweise ganz oben */}
             <InfoPanel errorMessage={errorMessage} />
             
             {/* Hauptinhalt: Einkaufsliste, Canvas, Sidebar */}
             <div className="flex justify-center items-start space-x-6">
                 {/* Einkaufsliste links */}
-                <div className="w-64 flex-shrink-0">
+                <div className="w-70 flex-shrink-0">
                     <ShoppingList profileData={profileData} />
                 </div>
 
@@ -60,7 +60,7 @@ const BalkonRechnerPage = () => {
                 </div>
 
                 {/* Sidebar rechts */}
-                <div className="w-60 flex-shrink-0 space-y-4">
+                <div className="w-80 flex-shrink-0 space-y-4">
                     {isDrawing && points.length > 0 && (
                         <DrawingActions
                             points={points}
