@@ -4,7 +4,7 @@ import GridLayer from './GridLayer';
 import ProfilesLayer from './ProfilesLayer';
 import PolygonLayer from './PolygonLayer';
 import InteractionLayer from './InteractionLayer';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_VIEWPORT_WIDTH } from '../../constants/canvas';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_VIEWPORT_WIDTH, CANVAS_VIEWPORT_HEIGHT } from '../../constants/canvas';
 
 const Canvas = ({ state, handlers }) => {
   const {
@@ -44,8 +44,8 @@ const Canvas = ({ state, handlers }) => {
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4 inline-block">
       <div
-        className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-x-auto"
-        style={{ width: CANVAS_VIEWPORT_WIDTH }}
+        className="bg-gray-50 rounded-lg border-2 border-gray-200 overflow-x-auto overflow-y-auto"
+        style={{ width: CANVAS_VIEWPORT_WIDTH, height: CANVAS_VIEWPORT_HEIGHT }}
       >
         <Stage
           width={CANVAS_WIDTH}
