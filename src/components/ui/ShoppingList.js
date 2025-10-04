@@ -14,9 +14,10 @@ const ShoppingList = ({ profileData }) => {
         </h3>
       </div>
         <button
-          className="w-full mb-3 px-3 py-2 bg-accent hover:bg-accent/90 text-white text-md font-medium rounded-md transition-colors duration-200"
+          className="flex justify-center gap-4 items-center w-full mb-3 px-3 py-2 bg-accent hover:bg-accent/90 text-white text-md font-medium rounded-md transition-colors duration-200"
           onClick={handleAddToCart}
         >
+          <i class="icon-shopping-cart"></i>
           Zum Warenkorb
         </button>
       <div className="text-sm text-gray-700">
