@@ -179,9 +179,15 @@ export const useCanvasState = () => {
     }, [points, snapEnabled, hauswandEdges, scale, showLengths, lockedEdges, lockedAngles, showProfiles]);
 
     const handleStageClick = (e) => {
-        // Always close context menu on stage click
+        // Only handle left-clicks to avoid interfering with context menu
+        if (e.evt.button !== 0) {
+            return;
+        }
+
+        // If context menu is visible, the click should only close it and do nothing else.
         if (contextMenu.visible) {
             handleCloseContextMenu();
+            return;
         }
 
         // Im Zeichenmodus: normaler Punktplatzierungs-Workflow
