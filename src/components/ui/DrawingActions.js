@@ -13,14 +13,14 @@ const DrawingActions = ({ points, handleUndo, setIsDrawing }) => {
         <button
           onClick={handleUndo}
           disabled={points.length === 0}
-          className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium rounded-md transition-colors duration-200"
+          className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white font-medium rounded-md transition-colors duration-200"
         >
           {t('drawingControls.undo')}
         </button>
         <button
           onClick={() => setIsDrawing(false)}
           disabled={points.length < 3}
-          className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-medium rounded-md transition-colors duration-200"
+          className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white font-medium rounded-md transition-colors duration-200"
         >
           {t('drawingControls.finishDrawing')}
         </button>

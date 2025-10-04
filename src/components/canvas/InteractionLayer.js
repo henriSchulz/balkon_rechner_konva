@@ -84,10 +84,10 @@ const InteractionLayer = ({
             fill={isClosable ? '#4CAF50' : (isEditing ? '#f59e0b' : '#2563eb')}
             stroke="white"
             strokeWidth={2}
-            draggable={isEditing}
-            onDragStart={(e) => isEditing && handleDragStart(e, i)}
-            onDragMove={(e) => isEditing && handleDragMove(e, i)}
-            onDragEnd={(e) => isEditing && handleDragEnd(e, i)}
+            draggable={isEditing || isDrawing}
+            onDragStart={(e) => (isEditing || isDrawing) && handleDragStart(e, i)}
+            onDragMove={(e) => (isEditing || isDrawing) && handleDragMove(e, i)}
+            onDragEnd={(e) => (isEditing || isDrawing) && handleDragEnd(e, i)}
             onMouseEnter={() => isDrawing && i === 0 && setHoveredPointIndex(i)}
             onMouseLeave={() => isDrawing && i === 0 && setHoveredPointIndex(null)}
             onClick={(e) => {

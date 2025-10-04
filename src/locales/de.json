@@ -1,7 +1,7 @@
 {
   "infoPanel.title": "Bedienungshinweise",
   "infoPanel.pointInstruction": "Punkte setzen:",
-  "infoPanel.pointAction": "Klick auf Zeichenfläche",
+  "infoPanel.pointAction": "Klick auf Zeichenfläche (auch im Bearbeitungsmodus)",
   "infoPanel.lengthInstruction": "Längen bearbeiten:",
   "infoPanel.lengthAction": "Klick auf grüne Angaben",
   "infoPanel.angleInstruction": "Winkel bearbeiten:",

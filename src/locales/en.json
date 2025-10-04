@@ -1,7 +1,7 @@
 {
   "infoPanel.title": "Instructions",
   "infoPanel.pointInstruction": "Set points:",
-  "infoPanel.pointAction": "Click on drawing area",
+  "infoPanel.pointAction": "Click on drawing area (also in editing mode)",
   "infoPanel.lengthInstruction": "Edit lengths:",
   "infoPanel.lengthAction": "Click on green values",
   "infoPanel.angleInstruction": "Edit angles:",

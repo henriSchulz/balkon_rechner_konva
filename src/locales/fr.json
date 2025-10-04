@@ -1,7 +1,7 @@
 {
   "infoPanel.title": "Instructions",
   "infoPanel.pointInstruction": "Placer des points :",
-  "infoPanel.pointAction": "Cliquer sur la zone de dessin",
+  "infoPanel.pointAction": "Cliquer sur la zone de dessin (aussi en mode édition)",
   "infoPanel.lengthInstruction": "Modifier les longueurs :",
   "infoPanel.lengthAction": "Cliquer sur les valeurs vertes",
   "infoPanel.angleInstruction": "Modifier les angles :",
