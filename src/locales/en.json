@@ -1,7 +1,7 @@
 {
   "infoPanel.title": "Instructions",
   "infoPanel.pointInstruction": "Set points:",
-  "infoPanel.pointAction": "Click on drawing area",
+  "infoPanel.pointAction": "Click on drawing area (also in editing mode)",
   "infoPanel.lengthInstruction": "Edit lengths:",
   "infoPanel.lengthAction": "Click on green values",
   "infoPanel.angleInstruction": "Edit angles:",
@@ -19,9 +19,20 @@
   "pointsList.delete": "Delete",
   "pointsList.corner": "Corner",
   "pointsList.deleteAllTitle": "Delete all points",
-  "pointsList.deleteDisabledTooltip": "At least 3 points required",
+  "pointsList.deleteDisabledTooltip": "Cannot delete with less than 4 points or while in drawing mode.",
   "pointsList.deleteTooltip": "Delete point",
   "pointsList.noPoints": "No points available",
+  "pointsList.undo": "Undo",
+  "pointsList.undoTitle": "Remove last point",
+
+  "drawingControls.title": "Drawing Tools",
+  "drawingControls.newDrawing": "New Drawing",
+  "drawingControls.undo": "Undo",
+  "drawingControls.finishDrawing": "Finish Drawing",
+
+  "editingControls.title": "Editing Mode",
+  "editingControls.finishEditing": "Finish Editing",
+  "editingControls.editDrawing": "Edit Drawing",
 
   "shoppingList.title": "Shopping List",
   "shoppingList.profileType": "Profile type",

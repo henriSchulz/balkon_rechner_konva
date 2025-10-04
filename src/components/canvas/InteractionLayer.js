@@ -15,6 +15,11 @@ const InteractionLayer = ({
   snapLines,
   cursorPos,
   scale,
+  isDrawing,
+  isEditing,
+  hoveredPointIndex,
+  setHoveredPointIndex,
+  handleStageClick,
 }) => {
   return (
     <Layer>
@@ -31,7 +36,7 @@ const InteractionLayer = ({
       ))}
 
       {/* Smart Guides - Vorschau für die nächste Linie */}
-      {cursorPos && points.length > 0 && (
+      {cursorPos && points.length > 0 && isDrawing && (
         <Group>
           {(() => {
             const lastPoint = points[points.length - 1];
@@ -66,24 +71,35 @@ const InteractionLayer = ({
       )}
 
       {/* Points and Angles */}
-      {points.map((point, i) => (
+      {points.map((point, i) => {
+        const isClosable = isDrawing && i === 0 && points.length > 2 && hoveredPointIndex === 0;
+
+        return (
         <Group key={`point-group-${i}`}>
           {/* Draggable Point */}
           <Circle
             x={point.x}
             y={point.y}
-            radius={6}
-            fill="#2563eb"
+            radius={isClosable ? 10 : 6}
+            fill={isClosable ? '#4CAF50' : (isEditing ? '#f59e0b' : '#2563eb')}
             stroke="white"
             strokeWidth={2}
-            draggable
-            onDragStart={(e) => handleDragStart(e, i)}
-            onDragMove={(e) => handleDragMove(e, i)}
-            onDragEnd={(e) => handleDragEnd(e, i)}
+            draggable={isEditing || isDrawing}
+            onDragStart={(e) => (isEditing || isDrawing) && handleDragStart(e, i)}
+            onDragMove={(e) => (isEditing || isDrawing) && handleDragMove(e, i)}
+            onDragEnd={(e) => (isEditing || isDrawing) && handleDragEnd(e, i)}
+            onMouseEnter={() => isDrawing && i === 0 && setHoveredPointIndex(i)}
+            onMouseLeave={() => isDrawing && i === 0 && setHoveredPointIndex(null)}
+            onClick={(e) => {
+              if (isDrawing && i === 0 && points.length > 2) {
+                e.evt.stopPropagation(); // prevent stage click
+                handleStageClick(e); // will trigger the close logic
+              }
+            }}
           />
 
           {/* Angle Label */}
-          {angles[i] !== undefined && (
+          {!isDrawing && angles[i] !== undefined && (
             <Group>
               {(() => {
                 const prevEdgeIndex = (i - 1 + points.length) % points.length;
@@ -119,9 +135,11 @@ const InteractionLayer = ({
                     offsetY={5}
                     rotation={degrees}
                     onClick={(e) => {
-                      e.evt.stopPropagation();
-                      if (isAngleLocked) handleUnlockAngle(i);
-                      else if (isAngleEditable) handleAngleClick(i, angles[i]);
+                      if (isEditing) {
+                        e.evt.stopPropagation();
+                        if (isAngleLocked) handleUnlockAngle(i);
+                        else if (isAngleEditable) handleAngleClick(i, angles[i]);
+                      }
                     }}
                   />
                 );
@@ -129,7 +147,7 @@ const InteractionLayer = ({
             </Group>
           )}
         </Group>
-      ))}
+      )})}
     </Layer>
   );
 };

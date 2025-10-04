@@ -1,7 +1,7 @@
 {
   "infoPanel.title": "Instructions",
   "infoPanel.pointInstruction": "Placer des points :",
-  "infoPanel.pointAction": "Cliquer sur la zone de dessin",
+  "infoPanel.pointAction": "Cliquer sur la zone de dessin (aussi en mode édition)",
   "infoPanel.lengthInstruction": "Modifier les longueurs :",
   "infoPanel.lengthAction": "Cliquer sur les valeurs vertes",
   "infoPanel.angleInstruction": "Modifier les angles :",
@@ -19,9 +19,20 @@
   "pointsList.delete": "Supprimer",
   "pointsList.corner": "Coin",
   "pointsList.deleteAllTitle": "Tout supprimer",
-  "pointsList.deleteDisabledTooltip": "Au moins 3 points requis",
+  "pointsList.deleteDisabledTooltip": "Impossible de supprimer avec moins de 4 points ou en mode dessin.",
   "pointsList.deleteTooltip": "Supprimer le point",
   "pointsList.noPoints": "Aucun point disponible",
+  "pointsList.undo": "Annuler",
+  "pointsList.undoTitle": "Supprimer le dernier point",
+
+  "drawingControls.title": "Outils de dessin",
+  "drawingControls.newDrawing": "Nouveau dessin",
+  "drawingControls.undo": "Annuler",
+  "drawingControls.finishDrawing": "Terminer le dessin",
+
+  "editingControls.title": "Mode d'édition",
+  "editingControls.finishEditing": "Terminer l'édition",
+  "editingControls.editDrawing": "Modifier le dessin",
 
   "shoppingList.title": "Liste de courses",
   "shoppingList.profileType": "Type de profilé",

@@ -1,7 +1,7 @@
 {
   "infoPanel.title": "Bedienungshinweise",
   "infoPanel.pointInstruction": "Punkte setzen:",
-  "infoPanel.pointAction": "Klick auf Zeichenfläche",
+  "infoPanel.pointAction": "Klick auf Zeichenfläche (auch im Bearbeitungsmodus)",
   "infoPanel.lengthInstruction": "Längen bearbeiten:",
   "infoPanel.lengthAction": "Klick auf grüne Angaben",
   "infoPanel.angleInstruction": "Winkel bearbeiten:",
@@ -19,9 +19,20 @@
   "pointsList.delete": "Löschen",
   "pointsList.corner": "Ecke",
   "pointsList.deleteAllTitle": "Alle Punkte löschen",
-  "pointsList.deleteDisabledTooltip": "Mindestens 3 Punkte erforderlich",
+  "pointsList.deleteDisabledTooltip": "Löschen deaktiviert, wenn weniger als 4 Punkte vorhanden sind oder der Zeichenmodus aktiv ist.",
   "pointsList.deleteTooltip": "Punkt löschen",
   "pointsList.noPoints": "Keine Punkte vorhanden",
+  "pointsList.undo": "Rückgängig",
+  "pointsList.undoTitle": "Letzten Punkt entfernen",
+
+  "drawingControls.title": "Zeichenwerkzeuge",
+  "drawingControls.newDrawing": "Neue Zeichnung",
+  "drawingControls.undo": "Rückgängig",
+  "drawingControls.finishDrawing": "Zeichnung beenden",
+
+  "editingControls.title": "Bearbeitungsmodus",
+  "editingControls.finishEditing": "Bearbeitung beenden",
+  "editingControls.editDrawing": "Zeichnung bearbeiten",
 
   "shoppingList.title": "Einkaufsliste",
   "shoppingList.profileType": "Profiltyp",

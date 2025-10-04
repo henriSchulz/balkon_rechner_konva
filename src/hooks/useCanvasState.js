@@ -47,8 +47,11 @@ export const useCanvasState = () => {
     const [initialState] = useState(getInitialState);
 
     const [points, setPoints] = useState(initialState.points);
+    const [isDrawing, setIsDrawing] = useState(initialState.points.length === 0);
+    const [isEditing, setIsEditing] = useState(false);
     const [snapEnabled, setSnapEnabled] = useState(initialState.snapEnabled);
     const [hoveredEdgeIndex, setHoveredEdgeIndex] = useState(null);
+    const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
     const [hauswandEdges, setHauswandEdges] = useState(initialState.hauswandEdges);
     const [scale, setScale] = useState(initialState.scale);
     const [showLengths, setShowLengths] = useState(initialState.showLengths);
@@ -64,6 +67,95 @@ export const useCanvasState = () => {
     const [showProfiles, setShowProfiles] = useState(initialState.showProfiles);
     const dragStartPoints = useRef(null);
     const isInitialMount = useRef(true);
+
+    // Hilfsfunktion: Finde den besten Index zum Einfügen eines neuen Punkts
+    const findBestInsertionIndex = (points, newPos) => {
+        if (points.length < 2) return points.length;
+        
+        let minDistance = Infinity;
+        let bestIndex = 0;
+        
+        // Prüfe jede Kante des Polygons
+        for (let i = 0; i < points.length; i++) {
+            const currentPoint = points[i];
+            const nextPoint = points[(i + 1) % points.length];
+            
+            // Berechne den Abstand vom neuen Punkt zur Linie zwischen currentPoint und nextPoint
+            const distance = distanceToLineSegment(newPos, currentPoint, nextPoint);
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestIndex = i + 1; // Füge nach dem aktuellen Punkt ein
+            }
+        }
+        
+        return bestIndex % points.length;
+    };
+
+    // Hilfsfunktion: Berechne den Abstand von einem Punkt zu einer Linie
+    const distanceToLineSegment = (point, lineStart, lineEnd) => {
+        const A = point.x - lineStart.x;
+        const B = point.y - lineStart.y;
+        const C = lineEnd.x - lineStart.x;
+        const D = lineEnd.y - lineStart.y;
+
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        
+        if (lenSq === 0) return Math.sqrt(A * A + B * B);
+        
+        let param = dot / lenSq;
+        
+        let xx, yy;
+        if (param < 0) {
+            xx = lineStart.x;
+            yy = lineStart.y;
+        } else if (param > 1) {
+            xx = lineEnd.x;
+            yy = lineEnd.y;
+        } else {
+            xx = lineStart.x + param * C;
+            yy = lineStart.y + param * D;
+        }
+
+        const dx = point.x - xx;
+        const dy = point.y - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    // Hilfsfunktion: Update locked indices nach dem Einfügen eines Punkts
+    const updateLockedIndicesAfterInsertion = (insertIndex) => {
+        // Update locked edges
+        const newLockedEdges = new Set();
+        lockedEdges.forEach(edgeIndex => {
+            if (edgeIndex >= insertIndex) {
+                newLockedEdges.add(edgeIndex + 1);
+            } else {
+                newLockedEdges.add(edgeIndex);
+            }
+        });
+        setLockedEdges(newLockedEdges);
+        
+        // Update locked angles
+        const newLockedAngles = new Set();
+        lockedAngles.forEach(angleIndex => {
+            if (angleIndex >= insertIndex) {
+                newLockedAngles.add(angleIndex + 1);
+            } else {
+                newLockedAngles.add(angleIndex);
+            }
+        });
+        setLockedAngles(newLockedAngles);
+        
+        // Update hauswand edges
+        const newHauswandEdges = hauswandEdges.map(edgeIndex => {
+            if (edgeIndex >= insertIndex) {
+                return edgeIndex + 1;
+            }
+            return edgeIndex;
+        });
+        setHauswandEdges(newHauswandEdges);
+    };
 
     useEffect(() => {
         // Prevent saving to localStorage on the initial render
@@ -86,18 +178,56 @@ export const useCanvasState = () => {
     }, [points, snapEnabled, hauswandEdges, scale, showLengths, lockedEdges, lockedAngles, showProfiles]);
 
     const handleStageClick = (e) => {
-        const isStage = e.target.getStage() === e.target;
-        const isPolygonFill = e.target.className === 'Line' && e.target.fill();
-        if (!isStage && !isPolygonFill) return;
+        // Im Zeichenmodus: normaler Punktplatzierungs-Workflow
+        if (isDrawing) {
+            // Check if the click is on the first point to close the polygon
+            if (hoveredPointIndex === 0 && points.length > 2) {
+                setIsDrawing(false);
+                setHoveredPointIndex(null); // Reset hover state
+                return;
+            }
 
-        const stage = e.target.getStage();
-        let pos = stage.getPointerPosition();
+            const isStage = e.target.getStage() === e.target;
+            const isPolygonFill = e.target.className === 'Line' && e.target.fill();
+            if (!isStage && !isPolygonFill) return;
 
-        if (snapEnabled) {
-            const lastPoint = points.length > 0 ? points[points.length - 1] : null;
-            pos = getSnappedPos(pos, points, lastPoint, scale, setSnapLines);
+            const stage = e.target.getStage();
+            let pos = stage.getPointerPosition();
+
+            if (snapEnabled) {
+                const lastPoint = points.length > 0 ? points[points.length - 1] : null;
+                pos = getSnappedPos(pos, points, lastPoint, scale, setSnapLines);
+            }
+            setPoints([...points, pos]);
+            return;
         }
-        setPoints([...points, pos]);
+
+        // Im Bearbeitungsmodus: Punkte hinzufügen nur bei bestimmten Bedingungen
+        if (isEditing) {
+            const isStage = e.target.getStage() === e.target;
+            const isPolygonFill = e.target.className === 'Line' && e.target.fill();
+            
+            // Nur bei Klick auf leere Stage oder Polygon-Fläche neue Punkte hinzufügen
+            if (!isStage && !isPolygonFill) return;
+
+            const stage = e.target.getStage();
+            let pos = stage.getPointerPosition();
+
+            if (snapEnabled) {
+                pos = getSnappedPos(pos, points, null, scale, setSnapLines);
+            }
+
+            // Finde die beste Position, um den neuen Punkt einzufügen
+            const insertIndex = findBestInsertionIndex(points, pos);
+            const newPoints = [...points];
+            newPoints.splice(insertIndex, 0, pos);
+            
+            setPoints(newPoints);
+            
+            // Update locked edges and angles indices nach dem Einfügen
+            updateLockedIndicesAfterInsertion(insertIndex);
+            return;
+        }
     };
 
     const handleHauswandSetzen = (edgeIndex) => {
@@ -303,11 +433,19 @@ export const useCanvasState = () => {
         setHauswandEdges(newHauswandEdges);
     };
 
+    const handleUndo = () => {
+        if (isDrawing && points.length > 0) {
+            setPoints(points.slice(0, -1));
+        }
+    };
+
     const handleClearAllPoints = () => {
         setPoints([]);
         setLockedEdges(new Set());
         setLockedAngles(new Set());
         setHauswandEdges([]);
+        setIsDrawing(true);
+        setIsEditing(false);
     };
 
     const checkIfMoveAllowed = (pointIndex) => {
@@ -337,6 +475,21 @@ export const useCanvasState = () => {
     };
 
     const handleDragMove = (e, idx) => {
+        // Im Zeichenmodus: keine Beschränkungen durch gesperrte Kanten/Winkel
+        if (isDrawing) {
+            let newPos = e.target.position();
+            if (snapEnabled) {
+                const otherPoints = points.filter((_, i) => i !== idx);
+                newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
+                e.target.position(newPos);
+            }
+
+            const newPoints = points.map((p, i) => (i === idx ? newPos : p));
+            setPoints(newPoints);
+            return;
+        }
+
+        // Im Bearbeitungsmodus: Prüfe Beschränkungen durch gesperrte Kanten/Winkel
         const affected = checkIfMoveAllowed(idx);
         if (affected.edges.length > 0 || affected.angles.length > 0) {
             e.target.position(points[idx]);
@@ -356,6 +509,14 @@ export const useCanvasState = () => {
 
     const handleDragEnd = (e, idx) => {
         setSnapLines([]);
+        
+        // Im Zeichenmodus: keine Beschränkungen, always allow
+        if (isDrawing) {
+            dragStartPoints.current = null;
+            return;
+        }
+
+        // Im Bearbeitungsmodus: Prüfe Beschränkungen durch gesperrte Kanten/Winkel
         const affected = checkIfMoveAllowed(idx);
         if (affected.edges.length > 0 || affected.angles.length > 0) {
             let message = 'Punkt kann nicht bewegt werden!';
@@ -393,10 +554,16 @@ export const useCanvasState = () => {
     return {
         // State
         points,
+        isDrawing,
+        setIsDrawing,
+        isEditing,
+        setIsEditing,
         snapEnabled,
         setSnapEnabled,
         hoveredEdgeIndex,
         setHoveredEdgeIndex,
+        hoveredPointIndex,
+        setHoveredPointIndex,
         hauswandEdges,
         scale,
         setScale,
@@ -434,6 +601,7 @@ export const useCanvasState = () => {
         handleUnlockAngle,
         handleDeletePoint,
         handleClearAllPoints,
+        handleUndo,
         handleDragStart,
         handleDragMove,
         handleDragEnd,
