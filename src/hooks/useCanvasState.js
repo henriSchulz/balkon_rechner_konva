@@ -63,11 +63,37 @@ export const useCanvasState = () => {
     const [lockedAngles, setLockedAngles] = useState(initialState.lockedAngles);
     const [errorMessage, setErrorMessage] = useState('');
     const [cursorPos, setCursorPos] = useState(null);
+    const [liveLength, setLiveLength] = useState(0);
+    const [liveAngle, setLiveAngle] = useState(0);
     const [snapLines, setSnapLines] = useState([]);
     const [showProfiles, setShowProfiles] = useState(initialState.showProfiles);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, pointIndex: null });
     const dragStartPoints = useRef(null);
     const isInitialMount = useRef(true);
+
+    // Effekt zur Berechnung von Live-Länge und -Winkel
+    useEffect(() => {
+        if (isDrawing && points.length > 0 && cursorPos) {
+            const lastPoint = points[points.length - 1];
+
+            // Live-Länge berechnen
+            const lengthInPixels = getDistance(lastPoint, cursorPos);
+            const lengthInMeters = lengthInPixels / scale;
+            setLiveLength(lengthInMeters);
+
+            // Live-Winkel berechnen
+            if (points.length > 1) {
+                const secondLastPoint = points[points.length - 2];
+                const angle = getAngle(secondLastPoint, lastPoint, cursorPos);
+                setLiveAngle(angle);
+            } else {
+                setLiveAngle(0); // Kein Winkel beim ersten Segment
+            }
+        } else {
+            setLiveLength(0);
+            setLiveAngle(0);
+        }
+    }, [cursorPos, points, isDrawing, scale]);
 
     // Hilfsfunktion: Finde den besten Index zum Einfügen eines neuen Punkts
     const findBestInsertionIndex = (points, newPos) => {
@@ -660,6 +686,8 @@ export const useCanvasState = () => {
         errorMessage,
         cursorPos,
         setCursorPos,
+        liveLength,
+        liveAngle,
         snapLines,
         setSnapLines,
         showProfiles,

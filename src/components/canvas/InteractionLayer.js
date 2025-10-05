@@ -1,6 +1,5 @@
 import React from 'react';
 import { Layer, Circle, Group, Text, Line, Arc } from 'react-konva';
-import { pixelsToMeters, getDistance } from '../../utils/geometry';
 
 const InteractionLayer = ({
   points,
@@ -14,12 +13,13 @@ const InteractionLayer = ({
   handleUnlockAngle,
   snapLines,
   cursorPos,
-  scale,
   isDrawing,
   isEditing,
   hoveredPointIndex,
   setHoveredPointIndex,
   handleStageClick,
+  liveLength,
+  liveAngle,
 }) => {
   return (
     <Layer>
@@ -36,15 +36,13 @@ const InteractionLayer = ({
       ))}
 
       {/* Smart Guides - Vorschau für die nächste Linie */}
-      {cursorPos && points.length > 0 && isDrawing && (
+      {cursorPos && points.length > 0 && isDrawing && liveLength > 0 && (
         <Group listening={false}>
           {(() => {
             const lastPoint = points[points.length - 1];
-            const distance = getDistance(lastPoint, cursorPos);
-            const lengthInMeters = pixelsToMeters(distance, scale);
             const newAngleRad = Math.atan2(cursorPos.y - lastPoint.y, cursorPos.x - lastPoint.x);
 
-            let degrees, displayAngle, rotationDeg;
+            let degrees, rotationDeg;
 
             if (points.length > 1) {
               const prevPoint = points[points.length - 2];
@@ -54,11 +52,9 @@ const InteractionLayer = ({
               if (deltaAngleDeg > 180) deltaAngleDeg -= 360;
 
               degrees = deltaAngleDeg; // Signed angle for arc direction
-              displayAngle = Math.abs(degrees);
               rotationDeg = prevAngleRad * 180 / Math.PI;
             } else {
               degrees = newAngleRad * 180 / Math.PI;
-              displayAngle = Math.abs(degrees);
               rotationDeg = 0;
             }
 
@@ -68,7 +64,7 @@ const InteractionLayer = ({
 
             const angleDisplayGroup = [];
             const ANGLE_TOLERANCE = 1.5;
-            const isRightAngle = Math.abs(displayAngle - 90) < ANGLE_TOLERANCE;
+            const isRightAngle = Math.abs(liveAngle - 90) < ANGLE_TOLERANCE;
 
             if (isRightAngle) {
               const size = 15;
@@ -100,15 +96,15 @@ const InteractionLayer = ({
 
               angleDisplayGroup.push(
                 <Arc key="angle-arc" x={lastPoint.x} y={lastPoint.y} innerRadius={30} outerRadius={31} angle={degrees} rotation={rotationDeg} stroke="#666" strokeWidth={1} dash={[2, 2]} />,
-                <Text key="angle-text" x={angleTextPos.x} y={angleTextPos.y} text={`${displayAngle.toFixed(1)}°`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} offsetX={15} offsetY={8} />
+                <Text key="angle-text" x={angleTextPos.x} y={angleTextPos.y} text={`${liveAngle.toFixed(1)}°`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} offsetX={15} offsetY={8} />
               );
             }
 
             return (
               <>
                 <Line points={[lastPoint.x, lastPoint.y, cursorPos.x, cursorPos.y]} stroke="#CF2B32" strokeWidth={1.5} dash={[6, 4]} />
-                <Text x={midPoint.x} y={midPoint.y} text={`${lengthInMeters} m`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
-                {angleDisplayGroup}
+                <Text x={midPoint.x} y={midPoint.y} text={`${liveLength.toFixed(2)} m`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
+                {points.length > 1 && angleDisplayGroup}
               </>
             );
           })()}

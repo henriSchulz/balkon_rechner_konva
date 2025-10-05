@@ -28,12 +28,16 @@ const BalkonRechnerPage = () => {
         handleUndo, handleStageContextMenu, handleCloseContextMenu,
 
         // Derived Data
-        angles, polygonArea, profileData
+        angles, polygonArea, profileData,
+
+        // Live data
+        liveLength, liveAngle
     } = useCanvasState();
 
     const canvasState = {
         points, scale, lockedEdges, hoveredEdgeIndex, hauswandEdges, showLengths, angles, lockedAngles,
-        snapLines, cursorPos, showProfiles, profileData, snapEnabled, isDrawing, hoveredPointIndex, isEditing
+        snapLines, cursorPos, showProfiles, profileData, snapEnabled, isDrawing, hoveredPointIndex, isEditing,
+        liveLength, liveAngle
     };
 
     const canvasHandlers = {
