@@ -37,7 +37,6 @@ const PolygonLayer = ({
       {points.map((point, i) => {
         const nextPoint = points[(i + 1) % points.length];
         const isHovered = hoveredEdgeIndex === i;
-        const isHauswand = hauswandEdges.includes(i);
         const isLocked = lockedEdges.has(i);
         const midX = (point.x + nextPoint.x) / 2;
         const midY = (point.y + nextPoint.y) / 2;
@@ -63,8 +62,8 @@ const PolygonLayer = ({
             {/* Visible Edge Line */}
             <Line
               points={[point.x, point.y, nextPoint.x, nextPoint.y]}
-              stroke={isHauswand ? "#e53e3e" : (isHovered ? "#FF9500" : "#2563eb")}
-              strokeWidth={isHauswand ? 6 : (isHovered ? 5 : 4)}
+              stroke={isHovered ? "#FF9500" : "#2563eb"}
+              strokeWidth={isHovered ? 5 : 4}
               lineCap="round"
               lineJoin="round"
             />
@@ -108,7 +107,7 @@ const PolygonLayer = ({
               onMouseEnter={() => setHoveredEdgeIndex(i)}
               onMouseLeave={() => setHoveredEdgeIndex(null)}
               onClick={() => {
-                if (isHauswand) handleClearHauswand();
+                if (hauswandEdges.includes(i)) handleClearHauswand();
                 else handleHauswandSetzen(i);
               }}
             />

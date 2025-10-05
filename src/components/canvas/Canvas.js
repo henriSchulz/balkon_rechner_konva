@@ -1,6 +1,7 @@
 import React from 'react';
 import { Stage } from 'react-konva';
 import GridLayer from './GridLayer';
+import HauswandLayer from './HauswandLayer';
 import ProfilesLayer from './ProfilesLayer';
 import PolygonLayer from './PolygonLayer';
 import InteractionLayer from './InteractionLayer';
@@ -90,6 +91,7 @@ const Canvas = ({ state, handlers }) => {
           }}
         >
           <GridLayer width={CANVAS_WIDTH} height={CANVAS_HEIGHT} scale={scale} />
+          <HauswandLayer points={points} hauswandEdges={hauswandEdges} />
           <ProfilesLayer showProfiles={showProfiles} profileData={profileData} />
           <PolygonLayer
             points={points}
