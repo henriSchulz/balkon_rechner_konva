@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layer, Circle, Group, Text, Line } from 'react-konva';
+import { Layer, Circle, Group, Text, Line, Arc } from 'react-konva';
 import { pixelsToMeters, getDistance } from '../../utils/geometry';
 
 const InteractionLayer = ({
@@ -42,28 +42,73 @@ const InteractionLayer = ({
             const lastPoint = points[points.length - 1];
             const distance = getDistance(lastPoint, cursorPos);
             const lengthInMeters = pixelsToMeters(distance, scale);
-            const angle = Math.atan2(cursorPos.y - lastPoint.y, cursorPos.x - lastPoint.x);
-            const degrees = (angle * 180) / Math.PI;
+            const newAngleRad = Math.atan2(cursorPos.y - lastPoint.y, cursorPos.x - lastPoint.x);
+
+            let degrees, displayAngle, rotationDeg;
+
+            if (points.length > 1) {
+              const prevPoint = points[points.length - 2];
+              const prevAngleRad = Math.atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x);
+              let deltaAngleDeg = (newAngleRad - prevAngleRad) * 180 / Math.PI;
+              if (deltaAngleDeg <= -180) deltaAngleDeg += 360;
+              if (deltaAngleDeg > 180) deltaAngleDeg -= 360;
+
+              degrees = deltaAngleDeg; // Signed angle for arc direction
+              displayAngle = Math.abs(degrees);
+              rotationDeg = prevAngleRad * 180 / Math.PI;
+            } else {
+              degrees = newAngleRad * 180 / Math.PI;
+              displayAngle = Math.abs(degrees);
+              rotationDeg = 0;
+            }
+
+            const midPoint = { x: (lastPoint.x + cursorPos.x) / 2, y: (lastPoint.y + cursorPos.y) / 2 };
+            const absAngleDeg = newAngleRad * 180 / Math.PI;
+            const textRotation = (absAngleDeg > 90 || absAngleDeg < -90) ? absAngleDeg + 180 : absAngleDeg;
+
+            const angleDisplayGroup = [];
+            const ANGLE_TOLERANCE = 1.5;
+            const isRightAngle = Math.abs(displayAngle - 90) < ANGLE_TOLERANCE;
+
+            if (isRightAngle) {
+              const size = 15;
+              const prevAngleRad = rotationDeg * Math.PI / 180;
+
+              // Point on the previous segment's line, extended outwards from the corner
+              const p1 = {
+                x: lastPoint.x + size * Math.cos(prevAngleRad),
+                y: lastPoint.y + size * Math.sin(prevAngleRad)
+              };
+              // Point on the new segment's line (perpendicular to the previous one)
+              const p2 = {
+                x: lastPoint.x + size * Math.cos(prevAngleRad + Math.PI / 2 * (degrees < 0 ? -1 : 1)),
+                y: lastPoint.y + size * Math.sin(prevAngleRad + Math.PI / 2 * (degrees < 0 ? -1 : 1))
+              };
+              // The corner of the square symbol, forming a parallelogram with lastPoint
+              const corner = { x: p1.x + p2.x - lastPoint.x, y: p1.y + p2.y - lastPoint.y };
+
+              angleDisplayGroup.push(
+                <Line key="right-angle-indicator" points={[p1.x, p1.y, corner.x, corner.y, p2.x, p2.y]} stroke="#666" strokeWidth={1.5} />
+              );
+            } else {
+              const angleTextRadius = 45;
+              const angleTextAngleRad = (rotationDeg * Math.PI / 180) + (degrees * Math.PI / 180 / 2);
+              const angleTextPos = {
+                x: lastPoint.x + angleTextRadius * Math.cos(angleTextAngleRad),
+                y: lastPoint.y + angleTextRadius * Math.sin(angleTextAngleRad),
+              };
+
+              angleDisplayGroup.push(
+                <Arc key="angle-arc" x={lastPoint.x} y={lastPoint.y} innerRadius={30} outerRadius={31} angle={degrees} rotation={rotationDeg} stroke="#666" strokeWidth={1} dash={[2, 2]} />,
+                <Text key="angle-text" x={angleTextPos.x} y={angleTextPos.y} text={`${displayAngle.toFixed(1)}°`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} offsetX={15} offsetY={8} />
+              );
+            }
 
             return (
               <>
-                <Line
-                  points={[lastPoint.x, lastPoint.y, cursorPos.x, cursorPos.y]}
-                  stroke="#4CAF50"
-                  strokeWidth={2}
-                  dash={[5, 5]}
-                />
-                <Text
-                  x={cursorPos.x + 20}
-                  y={cursorPos.y}
-                  zIndex={-10}
-                  text={`${lengthInMeters} m / ${degrees.toFixed(1)}°`}
-                  fontSize={12}
-                  fill="#333"
-                  padding={4}
-                  backgroundColor="rgba(255, 255, 255, 0.75)"
-                  cornerRadius={4}
-                />
+                <Line points={[lastPoint.x, lastPoint.y, cursorPos.x, cursorPos.y]} stroke="#CF2B32" strokeWidth={1.5} dash={[6, 4]} />
+                <Text x={midPoint.x} y={midPoint.y} text={`${lengthInMeters} m`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
+                {angleDisplayGroup}
               </>
             );
           })()}
