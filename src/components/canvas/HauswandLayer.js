@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Layer, Rect } from 'react-konva';
+import { Layer, Line } from 'react-konva';
 
 // Function to create the hatching pattern
 const createHatchPattern = () => {
@@ -24,11 +24,23 @@ const createHatchPattern = () => {
   return patternCanvas;
 };
 
+// Helper function to determine polygon winding order via signed area
+const getSignedPolygonArea = (points) => {
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
+    area += (p1.x * p2.y - p2.x * p1.y);
+  }
+  return area / 2;
+};
+
 const HauswandLayer = ({ points, hauswandEdges }) => {
   // Memoize the pattern so it's not recreated on every render
   const hatchPattern = useMemo(() => createHatchPattern(), []);
 
-  if (hauswandEdges.length === 0 || points.length < 2) {
+  // A polygon and its area are only defined for 3 or more points
+  if (hauswandEdges.length === 0 || points.length < 3) {
     return null;
   }
 
@@ -38,30 +50,53 @@ const HauswandLayer = ({ points, hauswandEdges }) => {
 
   if (!p1 || !p2) return null;
 
-  // Calculate the vector and angle of the wall edge
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  const angle = Math.atan2(dy, dx);
-
   // Define the thickness of the wall representation
   const wallThickness = 50;
 
-  // The rectangle starts at p1 and extends along the edge vector
+  // Calculate the vector of the wall edge and its length
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
   const wallLength = Math.sqrt(dx * dx + dy * dy);
+
+  if (wallLength === 0) return null;
+
+  // Calculate the normalized normal vector to the edge
+  const normalX = -dy / wallLength;
+  const normalY = dx / wallLength;
+
+  // Use the polygon's winding order to ensure the normal points "outside"
+  const signedArea = getSignedPolygonArea(points);
+  // For a CCW polygon (positive area), the normal (-dy, dx) points inward.
+  // We need to move in the opposite direction to go "outside".
+  const direction = signedArea >= 0 ? -1 : 1;
+
+  // Calculate the four corners of the wall rectangle by translating along the normal
+  const wallP1 = { x: p1.x, y: p1.y };
+  const wallP2 = { x: p2.x, y: p2.y };
+  const wallP3 = {
+    x: p2.x + normalX * wallThickness * direction,
+    y: p2.y + normalY * wallThickness * direction,
+  };
+  const wallP4 = {
+    x: p1.x + normalX * wallThickness * direction,
+    y: p1.y + normalY * wallThickness * direction,
+  };
+
+  const wallPoints = [
+    wallP1.x, wallP1.y,
+    wallP2.x, wallP2.y,
+    wallP3.x, wallP3.y,
+    wallP4.x, wallP4.y,
+  ];
 
   return (
     <Layer>
-      <Rect
-        x={p1.x}
-        y={p1.y}
-        width={wallLength}
-        height={wallThickness}
+      <Line
+        points={wallPoints}
+        closed={true}
         fillPatternImage={hatchPattern}
         fillPatternRepeat="repeat"
-        rotation={angle * (180 / Math.PI)} // Konva uses degrees for rotation
-        offsetX={0}
-        offsetY={wallThickness / 2} // Center the wall on the edge
-        listening={false} // The wall should not be interactive
+        listening={false}
       />
     </Layer>
   );
