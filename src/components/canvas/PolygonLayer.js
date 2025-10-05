@@ -63,8 +63,8 @@ const PolygonLayer = ({
             {/* Visible Edge Line */}
             <Line
               points={[point.x, point.y, nextPoint.x, nextPoint.y]}
-              stroke={isHauswand ? "#e53e3e" : (isHovered ? "#FF9500" : "#2563eb")}
-              strokeWidth={isHauswand ? 6 : (isHovered ? 5 : 4)}
+              stroke={isHovered ? "#FF9500" : "#2563eb"}
+              strokeWidth={isHovered ? 5 : 4}
               lineCap="round"
               lineJoin="round"
             />
