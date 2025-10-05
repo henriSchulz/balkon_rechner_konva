@@ -24,6 +24,8 @@ const Canvas = ({ state, handlers }) => {
     isDrawing,
     hoveredPointIndex,
     isEditing,
+    liveLength,
+    liveAngle,
   } = state;
 
   const {
@@ -126,6 +128,8 @@ const Canvas = ({ state, handlers }) => {
             hoveredPointIndex={hoveredPointIndex}
             setHoveredPointIndex={setHoveredPointIndex}
             handleStageClick={handleStageClick}
+            liveLength={liveLength}
+            liveAngle={liveAngle}
           />
         </Stage>
       </div>
