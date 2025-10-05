@@ -359,9 +359,9 @@ export const useCanvasState = () => {
         if (editingAngle === null || !newAngle || isNaN(newAngle)) return;
 
         const angleIndex = editingAngle;
-        const angleValue = parseFloat(newAngle);
+        const targetAngleDegrees = parseFloat(newAngle);
 
-        if (angleValue <= 0 || angleValue >= 180) {
+        if (targetAngleDegrees <= 0 || targetAngleDegrees >= 180) {
             setErrorMessage('Winkel muss zwischen 1° und 179° liegen!');
             setTimeout(() => setErrorMessage(''), 3000);
             return;
@@ -390,38 +390,57 @@ export const useCanvasState = () => {
         const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
         const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
 
-        const currentAngle = getAngle(prevPoint, currentPoint, nextPoint);
-        const angleDiff = angleValue - currentAngle;
-        const rotationRad = (angleDiff * Math.PI) / 180;
+        const crossProduct = v1.x * v2.y - v1.y * v2.x;
+        const sign = crossProduct !== 0 ? Math.sign(crossProduct) : 1;
+
+        const targetAngleRad = targetAngleDegrees * Math.PI / 180;
+        const rotationRad = sign * targetAngleRad;
+
+        const v1_angle = Math.atan2(v1.y, v1.x);
+        const v2_angle = Math.atan2(v2.y, v2.x);
 
         if (isPrevEdgeLocked) {
-            const cos = Math.cos(rotationRad);
-            const sin = Math.sin(rotationRad);
+            const new_v2_angle = v1_angle + rotationRad;
+            const v2_length = Math.hypot(v2.x, v2.y);
+            const new_v2 = {
+                x: v2_length * Math.cos(new_v2_angle),
+                y: v2_length * Math.sin(new_v2_angle)
+            };
             newPoints[(angleIndex + 1) % p_len] = {
-                x: currentPoint.x + (v2.x * cos - v2.y * sin),
-                y: currentPoint.y + (v2.x * sin + v2.y * cos)
+                x: currentPoint.x + new_v2.x,
+                y: currentPoint.y + new_v2.y
             };
         } else if (isNextEdgeLocked) {
-            const cos = Math.cos(-rotationRad);
-            const sin = Math.sin(-rotationRad);
+            const new_v1_angle = v2_angle - rotationRad;
+            const v1_length = Math.hypot(v1.x, v1.y);
+            const new_v1 = {
+                x: v1_length * Math.cos(new_v1_angle),
+                y: v1_length * Math.sin(new_v1_angle)
+            };
             newPoints[(angleIndex - 1 + p_len) % p_len] = {
-                x: currentPoint.x + (v1.x * cos - v1.y * sin),
-                y: currentPoint.y + (v1.x * sin + v1.y * cos)
+                x: currentPoint.x + new_v1.x,
+                y: currentPoint.y + new_v1.y
             };
         } else {
-            const halfRotation = rotationRad / 2;
-            const cos1 = Math.cos(-halfRotation);
-            const sin1 = Math.sin(-halfRotation);
+            const currentAngleRad = Math.acos(
+                (v1.x * v2.x + v1.y * v2.y) / (Math.hypot(v1.x, v1.y) * Math.hypot(v2.x, v2.y))
+            );
+
+            const totalRotation = rotationRad - (sign * currentAngleRad);
+            const halfRotation = totalRotation / 2;
+
+            const v1_length = Math.hypot(v1.x, v1.y);
+            const new_v1_angle = v1_angle - halfRotation;
             newPoints[(angleIndex - 1 + p_len) % p_len] = {
-                x: currentPoint.x + (v1.x * cos1 - v1.y * sin1),
-                y: currentPoint.y + (v1.x * sin1 + v1.y * cos1)
+                x: currentPoint.x + v1_length * Math.cos(new_v1_angle),
+                y: currentPoint.y + v1_length * Math.sin(new_v1_angle)
             };
 
-            const cos2 = Math.cos(halfRotation);
-            const sin2 = Math.sin(halfRotation);
+            const v2_length = Math.hypot(v2.x, v2.y);
+            const new_v2_angle = v2_angle + halfRotation;
             newPoints[(angleIndex + 1) % p_len] = {
-                x: currentPoint.x + (v2.x * cos2 - v2.y * sin2),
-                y: currentPoint.y + (v2.x * sin2 + v2.y * cos2)
+                x: currentPoint.x + v2_length * Math.cos(new_v2_angle),
+                y: currentPoint.y + v2_length * Math.sin(new_v2_angle)
             };
         }
 

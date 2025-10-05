@@ -37,7 +37,7 @@ const InteractionLayer = ({
 
       {/* Smart Guides - Vorschau für die nächste Linie */}
       {cursorPos && points.length > 0 && isDrawing && (
-        <Group>
+        <Group listening={false}>
           {(() => {
             const lastPoint = points[points.length - 1];
             const distance = getDistance(lastPoint, cursorPos);
