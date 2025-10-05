@@ -63,10 +63,11 @@ const PolygonLayer = ({
             {/* Visible Edge Line */}
             <Line
               points={[point.x, point.y, nextPoint.x, nextPoint.y]}
-              stroke={isHauswand ? "#e53e3e" : (isHovered ? "#FF9500" : "#2563eb")}
-              strokeWidth={isHauswand ? 6 : (isHovered ? 5 : 4)}
+              stroke={isHauswand ? "#A0A0A0" : (isHovered ? "#FF9500" : "#2563eb")}
+              strokeWidth={isHauswand ? 8 : (isHovered ? 5 : 4)}
               lineCap="round"
               lineJoin="round"
+              dash={isHauswand ? [10, 5] : []} // Dashed line for hatched effect
             />
 
             {/* Length Label */}
