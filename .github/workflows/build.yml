@@ -17,10 +17,10 @@ jobs:
       - name: 🟡 Node.js installieren
         uses: actions/setup-node@v4
         with:
-          node-version: '18'   # oder 20 je nach Projekt
+          node-version: '18'
 
       - name: 📦 Dependencies installieren
-        run: npm ci
+        run: npm install
 
       - name: 🏗️ Build ausführen
         run: npm run build
