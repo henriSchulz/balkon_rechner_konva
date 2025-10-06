@@ -29,4 +29,4 @@ This will compile the TypeScript files into JavaScript and place them in the `bu
 
 ## Update WordPress Site
 
-Copy the `static` folder from the build directory `wp-content/themes/flatsome-child/[YOUR SITE]` to your WordPress installation's theme directory.
+Copy the `static` folder located in the `build` directory, then paste it into `wp-content/themes/flatsome-child/[YOUR-SITE]`.
