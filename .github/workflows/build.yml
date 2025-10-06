@@ -24,3 +24,9 @@ jobs:
 
       - name: 🏗️ Build ausführen
         run: npm run build
+
+      - name: 📦 Build-Ordner als Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-build
+          path: build
