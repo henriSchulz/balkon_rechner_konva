@@ -24,7 +24,7 @@ const getInitialState = () => {
                 points: restored.points || [],
                 snapEnabled: restored.snapEnabled !== false,
                 hauswandEdges: restored.hauswandEdges || [],
-                scale: restored.scale || DEFAULT_SCALE,
+                scale: DEFAULT_SCALE,
                 showLengths: restored.showLengths !== false,
                 lockedEdges: new Set(restored.lockedEdges || []),
                 lockedAngles: new Set(restored.lockedAngles || []),
