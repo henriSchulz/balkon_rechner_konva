@@ -50,3 +50,72 @@ export function calculatePolygonArea(points, scale) {
 
   return areaInSquareMeters;
 }
+
+export const projectPointOnLine = (point, lineStart, lineEnd) => {
+    const L2 = (lineEnd.x - lineStart.x) ** 2 + (lineEnd.y - lineStart.y) ** 2;
+    if (L2 === 0) return lineStart;
+    const t = ((point.x - lineStart.x) * (lineEnd.x - lineStart.x) + (point.y - lineStart.y) * (lineEnd.y - lineStart.y)) / L2;
+    return {
+        x: lineStart.x + t * (lineEnd.x - lineStart.x),
+        y: lineStart.y + t * (lineEnd.y - lineStart.y),
+    };
+};
+
+export const getPointOnCircle = (point, center, radius) => {
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return { x: center.x + radius, y: center.y };
+    return {
+        x: center.x + (dx / dist) * radius,
+        y: center.y + (dy / dist) * radius,
+    };
+};
+
+export const circleCircleIntersection = (c1, r1, c2, r2) => {
+    const d = getDistance(c1, c2);
+
+    if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) {
+        return []; // No intersection or concentric
+    }
+
+    const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+    const h = Math.sqrt(r1 * r1 - a * a);
+    const x2 = c1.x + a * (c2.x - c1.x) / d;
+    const y2 = c1.y + a * (c2.y - c1.y) / d;
+
+    const p1 = {
+        x: x2 + h * (c2.y - c1.y) / d,
+        y: y2 - h * (c2.x - c1.x) / d,
+    };
+    const p2 = {
+        x: x2 - h * (c2.y - c1.y) / d,
+        y: y2 + h * (c2.x - c1.x) / d,
+    };
+
+    return [p1, p2];
+};
+
+export const lineCircleIntersection = (lineP1, lineP2, circleCenter, radius) => {
+    const dx = lineP2.x - lineP1.x;
+    const dy = lineP2.y - lineP1.y;
+    const A = dx * dx + dy * dy;
+    const B = 2 * (dx * (lineP1.x - circleCenter.x) + dy * (lineP1.y - circleCenter.y));
+    const C = (lineP1.x - circleCenter.x) ** 2 + (lineP1.y - circleCenter.y) ** 2 - radius ** 2;
+
+    const det = B * B - 4 * A * C;
+    const intersections = [];
+
+    if (A <= 0.0000001 || det < 0) {
+        return intersections; // No real solutions
+    } else if (det === 0) {
+        const t = -B / (2 * A);
+        intersections.push({ x: lineP1.x + t * dx, y: lineP1.y + t * dy });
+    } else {
+        const t1 = (-B + Math.sqrt(det)) / (2 * A);
+        const t2 = (-B - Math.sqrt(det)) / (2 * A);
+        intersections.push({ x: lineP1.x + t1 * dx, y: lineP1.y + t1 * dy });
+        intersections.push({ x: lineP1.x + t2 * dx, y: lineP1.y + t2 * dy });
+    }
+    return intersections;
+};

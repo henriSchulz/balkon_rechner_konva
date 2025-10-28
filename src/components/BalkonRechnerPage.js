@@ -20,7 +20,7 @@ const BalkonRechnerPage = () => {
         hoveredPointIndex, setHoveredPointIndex, hauswandEdges, scale, showLengths,
         editingEdge, editingLength, setEditingLength, lockedEdges, editingAngle, editingAngleValue,
         setEditingAngleValue, lockedAngles, errorMessage, cursorPos, setCursorPos, snapLines,
-        setSnapLines, showProfiles, contextMenu,
+        setSnapLines, showProfiles, contextMenu, dragInfo,
 
         // Handlers
         handleStageClick, handleHauswandSetzen, handleClearHauswand, handleLengthClick, handleAngleClick,
@@ -38,7 +38,7 @@ const BalkonRechnerPage = () => {
     const canvasState = {
         points, scale, lockedEdges, hoveredEdgeIndex, hauswandEdges, showLengths, angles, lockedAngles,
         snapLines, cursorPos, showProfiles, profileData, snapEnabled, isDrawing, hoveredPointIndex, isEditing,
-        liveLength, liveAngle
+        liveLength, liveAngle, dragInfo
     };
 
     const canvasHandlers = {

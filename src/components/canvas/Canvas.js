@@ -26,6 +26,7 @@ const Canvas = ({ state, handlers }) => {
     isEditing,
     liveLength,
     liveAngle,
+    dragInfo,
   } = state;
 
   const {
@@ -130,6 +131,7 @@ const Canvas = ({ state, handlers }) => {
             handleStageClick={handleStageClick}
             liveLength={liveLength}
             liveAngle={liveAngle}
+            dragInfo={dragInfo}
           />
         </Stage>
       </div>

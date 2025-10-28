@@ -3,7 +3,11 @@ import {
     getAngle,
     metersToPixels,
     getDistance,
-    calculatePolygonArea
+    calculatePolygonArea,
+    projectPointOnLine,
+    getPointOnCircle,
+    circleCircleIntersection,
+    lineCircleIntersection
 } from '../utils/geometry';
 import { getSnappedPos } from '../utils/snap';
 import { calculateProfiles } from '../utils/profiles';
@@ -68,6 +72,7 @@ export const useCanvasState = (selectedProfile) => {
     const [snapLines, setSnapLines] = useState([]);
     const [showProfiles, setShowProfiles] = useState(initialState.showProfiles);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, pointIndex: null });
+    const [dragInfo, setDragInfo] = useState(null);
     const dragStartPoints = useRef(null);
     const isInitialMount = useRef(true);
 
@@ -337,42 +342,58 @@ export const useCanvasState = (selectedProfile) => {
         if (editingEdge === null || !newLength || isNaN(newLength)) return;
 
         const edgeIndex = editingEdge;
-        const point1Index = edgeIndex;
-        const point2Index = (edgeIndex + 1) % points.length;
-        const point1 = points[point1Index];
-        const point2 = points[point2Index];
-
-        const prevEdgeIndex = (edgeIndex - 1 + points.length) % points.length;
-        const nextEdgeIndex = (edgeIndex + 1) % points.length;
-        const isPrevEdgeLocked = lockedEdges.has(prevEdgeIndex);
-        const isNextEdgeLocked = lockedEdges.has(nextEdgeIndex);
+        const p_len = points.length;
+        const p1_idx = edgeIndex;
+        const p2_idx = (edgeIndex + 1) % p_len;
 
         const newDistancePixels = metersToPixels(parseFloat(newLength), scale);
-        const dx = point2.x - point1.x;
-        const dy = point2.y - point1.y;
-        const currentLength = Math.sqrt(dx * dx + dy * dy);
-        const unitX = dx / currentLength;
-        const unitY = dy / currentLength;
-        const newPoints = [...points];
 
-        if (isPrevEdgeLocked && isNextEdgeLocked) {
-            setErrorMessage('Kante kann nicht bearbeitet werden - beide angrenzenden Kanten sind gesperrt!');
-            setTimeout(() => setErrorMessage(''), 3000);
-        } else if (isPrevEdgeLocked) {
-            newPoints[point2Index] = {
-                x: point1.x + unitX * newDistancePixels,
-                y: point1.y + unitY * newDistancePixels
-            };
-        } else if (isNextEdgeLocked) {
-            newPoints[point1Index] = {
-                x: point2.x - unitX * newDistancePixels,
-                y: point2.y - unitY * newDistancePixels
-            };
+        // Create a copy of points to modify
+        let newPoints = [...points];
+
+        // Helper function to update a point's position.
+        // The problematic recursive propagation has been removed to localize changes.
+        const updatePoint = (index, newPos) => {
+            newPoints[index] = newPos;
+        };
+
+        const p1 = newPoints[p1_idx];
+        const p2 = newPoints[p2_idx];
+
+        const p0_idx = (p1_idx - 1 + p_len) % p_len;
+        const p3_idx = (p2_idx + 1) % p_len;
+
+        const isP0P1Locked = lockedEdges.has(p0_idx);
+        const isP2P3Locked = lockedEdges.has(p2_idx);
+
+        if (isP0P1Locked && isP2P3Locked) {
+             setErrorMessage('Kante kann nicht bearbeitet werden - beide angrenzenden Kanten sind gesperrt!');
+             setTimeout(() => setErrorMessage(''), 3000);
+             return;
+        } else if (isP0P1Locked) {
+            // p1 is fixed, move p2
+            const newP2 = getPointOnCircle(p2, p1, newDistancePixels);
+            updatePoint(p2_idx, newP2);
+        } else if (isP2P3Locked) {
+            // p2 is fixed, move p1
+            const newP1 = getPointOnCircle(p1, p2, newDistancePixels);
+            updatePoint(p1_idx, newP1);
         } else {
-            const lengthDifference = newDistancePixels - getDistance(point1, point2);
+            // Neither are locked, move both towards/away from the center
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const currentLength = Math.hypot(dx, dy);
+            const unitX = currentLength > 0 ? dx / currentLength : 0;
+            const unitY = currentLength > 0 ? dy / currentLength : 0;
+
+            const lengthDifference = newDistancePixels - currentLength;
             const moveDistance = lengthDifference / 2;
-            newPoints[point1Index] = { x: point1.x - unitX * moveDistance, y: point1.y - unitY * moveDistance };
-            newPoints[point2Index] = { x: point2.x + unitX * moveDistance, y: point2.y + unitY * moveDistance };
+
+            const newP1 = { x: p1.x - unitX * moveDistance, y: p1.y - unitY * moveDistance };
+            const newP2 = { x: p2.x + unitX * moveDistance, y: p2.y + unitY * moveDistance };
+
+            updatePoint(p1_idx, newP1, new Set());
+            updatePoint(p2_idx, newP2, new Set());
         }
 
         setPoints(newPoints);
@@ -552,82 +573,121 @@ export const useCanvasState = (selectedProfile) => {
         setIsEditing(false);
     };
 
-    const checkIfMoveAllowed = (pointIndex) => {
-        const affectedEdges = [];
-        const affectedAngles = [];
-
-        const outgoingEdgeIndex = pointIndex;
-        const incomingEdgeIndex = (pointIndex - 1 + points.length) % points.length;
-
-        if (lockedEdges.has(outgoingEdgeIndex)) affectedEdges.push(outgoingEdgeIndex);
-        if (lockedEdges.has(incomingEdgeIndex)) affectedEdges.push(incomingEdgeIndex);
-
-        if (lockedAngles.has(pointIndex)) affectedAngles.push(pointIndex);
-
-        const prevAngleIndex = (pointIndex - 1 + points.length) % points.length;
-        const nextAngleIndex = (pointIndex + 1) % points.length;
-
-        if (lockedAngles.has(prevAngleIndex)) affectedAngles.push(prevAngleIndex);
-        if (lockedAngles.has(nextAngleIndex)) affectedAngles.push(nextAngleIndex);
-
-        return { edges: affectedEdges, angles: affectedAngles };
-    };
-
     const handleDragStart = (e, idx) => {
         setErrorMessage('');
         dragStartPoints.current = points;
+
+        if (!isEditing) return;
+
+        const p_len = points.length;
+        const prevPointIndex = (idx - 1 + p_len) % p_len;
+        const nextPointIndex = (idx + 1) % p_len;
+
+        const incomingEdgeIndex = prevPointIndex;
+        const outgoingEdgeIndex = idx;
+
+        const isIncomingEdgeLocked = lockedEdges.has(incomingEdgeIndex);
+        const isOutgoingEdgeLocked = lockedEdges.has(outgoingEdgeIndex);
+        const isCurrentAngleLocked = lockedAngles.has(idx);
+
+        let info = { pointIndex: idx, constraints: [] };
+
+        // Angle constraint is highest priority
+        if (isCurrentAngleLocked) {
+            const prevPoint = points[prevPointIndex];
+            const currentPoint = points[idx];
+            const nextPoint = points[nextPointIndex];
+
+            const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
+            const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
+            const mag1 = Math.hypot(v1.x, v1.y);
+            const mag2 = Math.hypot(v2.x, v2.y);
+
+            if (mag1 > 0.0001 && mag2 > 0.0001) {
+                const v1_norm = { x: v1.x / mag1, y: v1.y / mag1 };
+                const v2_norm = { x: v2.x / mag2, y: v2.y / mag2 };
+                let bisector_dir = { x: v1_norm.x + v2_norm.x, y: v1_norm.y + v2_norm.y };
+                if (Math.hypot(bisector_dir.x, bisector_dir.y) < 0.0001) {
+                    bisector_dir = { x: -v1_norm.y, y: v1_norm.x };
+                }
+                info.constraints.push({
+                    type: 'line',
+                    line: {
+                        p1: currentPoint,
+                        p2: { x: currentPoint.x + bisector_dir.x, y: currentPoint.y + bisector_dir.y }
+                    }
+                });
+            }
+        }
+
+        // Edge constraints
+        if (isIncomingEdgeLocked) {
+            info.constraints.push({
+                type: 'radius',
+                center: points[prevPointIndex],
+                radius: getDistance(points[prevPointIndex], points[idx])
+            });
+        }
+        if (isOutgoingEdgeLocked) {
+            info.constraints.push({
+                type: 'radius',
+                center: points[nextPointIndex],
+                radius: getDistance(points[idx], points[nextPointIndex])
+            });
+        }
+
+        if (info.constraints.length > 0) {
+            setDragInfo(info);
+        }
     };
 
     const handleDragMove = (e, idx) => {
-        // Im Zeichenmodus: keine Beschränkungen durch gesperrte Kanten/Winkel
+        let newPos = e.target.position();
+
         if (isDrawing) {
-            let newPos = e.target.position();
-            if (snapEnabled) {
+             if (snapEnabled) {
                 const otherPoints = points.filter((_, i) => i !== idx);
                 newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
-                e.target.position(newPos);
             }
+        } else if (isEditing && dragInfo) {
+            const lineConstraint = dragInfo.constraints.find(c => c.type === 'line');
+            const radiusConstraints = dragInfo.constraints.filter(c => c.type === 'radius');
 
-            const newPoints = points.map((p, i) => (i === idx ? newPos : p));
-            setPoints(newPoints);
-            return;
-        }
-
-        // Im Bearbeitungsmodus: Prüfe Beschränkungen durch gesperrte Kanten/Winkel
-        const affected = checkIfMoveAllowed(idx);
-        if (affected.edges.length > 0 || affected.angles.length > 0) {
-            e.target.position(points[idx]);
-            return;
-        }
-
-        let newPos = e.target.position();
-        if (snapEnabled) {
+            if (lineConstraint && radiusConstraints.length === 1) {
+                const intersections = lineCircleIntersection(lineConstraint.line.p1, lineConstraint.line.p2, radiusConstraints[0].center, radiusConstraints[0].radius);
+                if (intersections.length > 0) {
+                    newPos = intersections.reduce((prev, curr) => getDistance(newPos, prev) < getDistance(newPos, curr) ? prev : curr);
+                } else {
+                    newPos = points[idx]; // No valid position, stay put
+                }
+            } else if (lineConstraint) {
+                newPos = projectPointOnLine(newPos, lineConstraint.line.p1, lineConstraint.line.p2);
+            } else if (radiusConstraints.length === 2) {
+                 const intersections = circleCircleIntersection(radiusConstraints[0].center, radiusConstraints[0].radius, radiusConstraints[1].center, radiusConstraints[1].radius);
+                 if (intersections.length > 0) {
+                    newPos = intersections.reduce((prev, curr) => getDistance(newPos, prev) < getDistance(newPos, curr) ? prev : curr);
+                 } else {
+                    newPos = points[idx];
+                 }
+            } else if (radiusConstraints.length === 1) {
+                newPos = getPointOnCircle(newPos, radiusConstraints[0].center, radiusConstraints[0].radius);
+            } else if (snapEnabled) {
+                 const otherPoints = points.filter((_, i) => i !== idx);
+                 newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
+            }
+        } else if (snapEnabled) {
             const otherPoints = points.filter((_, i) => i !== idx);
             newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
-            e.target.position(newPos);
         }
 
+        e.target.position(newPos);
         const newPoints = points.map((p, i) => (i === idx ? newPos : p));
         setPoints(newPoints);
     };
 
     const handleDragEnd = (e, idx) => {
         setSnapLines([]);
-        
-        // Im Zeichenmodus: keine Beschränkungen, always allow
-        if (isDrawing) {
-            dragStartPoints.current = null;
-            return;
-        }
-
-        // Im Bearbeitungsmodus: Prüfe Beschränkungen durch gesperrte Kanten/Winkel
-        const affected = checkIfMoveAllowed(idx);
-        if (affected.edges.length > 0 || affected.angles.length > 0) {
-            let message = 'Punkt kann nicht bewegt werden!';
-            setErrorMessage(message);
-            setTimeout(() => setErrorMessage(''), 3000);
-            setPoints(dragStartPoints.current);
-        }
+        setDragInfo(null);
         dragStartPoints.current = null;
     };
 
@@ -693,6 +753,7 @@ export const useCanvasState = (selectedProfile) => {
         showProfiles,
         setShowProfiles,
         contextMenu,
+        dragInfo,
 
         // Handlers
         handleStageClick,
