@@ -41,19 +41,26 @@ const InteractionLayer = ({
               );
           }
           if (constraint.type === 'line') {
-              return (
-                  <Line
-                      key={`guide-${index}`}
-                      points={[constraint.line.p1.x - 1000 * (constraint.line.p2.x - constraint.line.p1.x),
-                               constraint.line.p1.y - 1000 * (constraint.line.p2.y - constraint.line.p1.y),
-                               constraint.line.p1.x + 1000 * (constraint.line.p2.x - constraint.line.p1.x),
-                               constraint.line.p1.y + 1000 * (constraint.line.p2.y - constraint.line.p1.y)]}
-                      stroke="#0000ff"
-                      strokeWidth={1}
-                      dash={[4, 4]}
-                      listening={false}
-                  />
-              );
+            // The line for the angle constraint is defined by the two points p1 and p2 from the hook.
+            // We extend this line in both directions for visualization.
+            const { p1, p2 } = constraint.line;
+            const dir = { x: p2.x - p1.x, y: p2.y - p1.y };
+
+            return (
+                <Line
+                    key={`guide-${index}`}
+                    points={[
+                        p1.x - 1000 * dir.x,
+                        p1.y - 1000 * dir.y,
+                        p1.x + 1000 * dir.x,
+                        p1.y + 1000 * dir.y
+                    ]}
+                    stroke="#CF2B32"
+                    strokeWidth={1.5}
+                    dash={[6, 4]}
+                    listening={false}
+                />
+            );
           }
           return null;
       })}
