@@ -95,3 +95,27 @@ export const circleCircleIntersection = (c1, r1, c2, r2) => {
 
     return [p1, p2];
 };
+
+export const lineCircleIntersection = (lineP1, lineP2, circleCenter, radius) => {
+    const dx = lineP2.x - lineP1.x;
+    const dy = lineP2.y - lineP1.y;
+    const A = dx * dx + dy * dy;
+    const B = 2 * (dx * (lineP1.x - circleCenter.x) + dy * (lineP1.y - circleCenter.y));
+    const C = (lineP1.x - circleCenter.x) ** 2 + (lineP1.y - circleCenter.y) ** 2 - radius ** 2;
+
+    const det = B * B - 4 * A * C;
+    const intersections = [];
+
+    if (A <= 0.0000001 || det < 0) {
+        return intersections; // No real solutions
+    } else if (det === 0) {
+        const t = -B / (2 * A);
+        intersections.push({ x: lineP1.x + t * dx, y: lineP1.y + t * dy });
+    } else {
+        const t1 = (-B + Math.sqrt(det)) / (2 * A);
+        const t2 = (-B - Math.sqrt(det)) / (2 * A);
+        intersections.push({ x: lineP1.x + t1 * dx, y: lineP1.y + t1 * dy });
+        intersections.push({ x: lineP1.x + t2 * dx, y: lineP1.y + t2 * dy });
+    }
+    return intersections;
+};

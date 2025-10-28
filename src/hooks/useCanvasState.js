@@ -6,7 +6,8 @@ import {
     calculatePolygonArea,
     projectPointOnLine,
     getPointOnCircle,
-    circleCircleIntersection
+    circleCircleIntersection,
+    lineCircleIntersection
 } from '../utils/geometry';
 import { getSnappedPos } from '../utils/snap';
 import { calculateProfiles } from '../utils/profiles';
@@ -576,74 +577,67 @@ export const useCanvasState = (selectedProfile) => {
         setErrorMessage('');
         dragStartPoints.current = points;
 
-        if (isEditing) {
-            const p_len = points.length;
-            const prevPointIndex = (idx - 1 + p_len) % p_len;
-            const nextPointIndex = (idx + 1) % p_len;
+        if (!isEditing) return;
 
-            const incomingEdgeIndex = prevPointIndex;
-            const outgoingEdgeIndex = idx;
+        const p_len = points.length;
+        const prevPointIndex = (idx - 1 + p_len) % p_len;
+        const nextPointIndex = (idx + 1) % p_len;
 
-            const isIncomingEdgeLocked = lockedEdges.has(incomingEdgeIndex);
-            const isOutgoingEdgeLocked = lockedEdges.has(outgoingEdgeIndex);
-            const isCurrentAngleLocked = lockedAngles.has(idx);
+        const incomingEdgeIndex = prevPointIndex;
+        const outgoingEdgeIndex = idx;
 
-            let constraint = null;
-            let info = {};
+        const isIncomingEdgeLocked = lockedEdges.has(incomingEdgeIndex);
+        const isOutgoingEdgeLocked = lockedEdges.has(outgoingEdgeIndex);
+        const isCurrentAngleLocked = lockedAngles.has(idx);
 
-            if (isIncomingEdgeLocked && isOutgoingEdgeLocked) {
-                constraint = 'fixed';
-            } else if (isIncomingEdgeLocked) {
-                constraint = 'radius';
-                info.center = points[prevPointIndex];
-                info.radius = getDistance(points[prevPointIndex], points[idx]);
-            } else if (isOutgoingEdgeLocked) {
-                constraint = 'radius';
-                info.center = points[nextPointIndex];
-                info.radius = getDistance(points[idx], points[nextPointIndex]);
-            } else if (isCurrentAngleLocked) {
-                constraint = 'line';
-                const prevPoint = points[prevPointIndex];
-                const currentPoint = points[idx];
-                const nextPoint = points[nextPointIndex];
+        let info = { pointIndex: idx, constraints: [] };
 
-                const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
-                const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
+        // Angle constraint is highest priority
+        if (isCurrentAngleLocked) {
+            const prevPoint = points[prevPointIndex];
+            const currentPoint = points[idx];
+            const nextPoint = points[nextPointIndex];
 
-                const mag1 = Math.hypot(v1.x, v1.y);
-                const mag2 = Math.hypot(v2.x, v2.y);
+            const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
+            const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
+            const mag1 = Math.hypot(v1.x, v1.y);
+            const mag2 = Math.hypot(v2.x, v2.y);
 
-                if (mag1 > 0.0001 && mag2 > 0.0001) {
-                    const v1_norm = { x: v1.x / mag1, y: v1.y / mag1 };
-                    const v2_norm = { x: v2.x / mag2, y: v2.y / mag2 };
-
-                    // The direction of the angle bisector is the sum of the normalized vectors
-                    let bisector_dir = { x: v1_norm.x + v2_norm.x, y: v1_norm.y + v2_norm.y };
-                    const mag_bisector = Math.hypot(bisector_dir.x, bisector_dir.y);
-
-                    // If the magnitude is close to zero, the vectors are nearly opposite (180 degrees)
-                    // In this case, the movement line is perpendicular to the segments.
-                    if (mag_bisector < 0.0001) {
-                        bisector_dir = { x: -v1_norm.y, y: v1_norm.x }; // Perpendicular to v1
-                    }
-
-                    info.line = {
+            if (mag1 > 0.0001 && mag2 > 0.0001) {
+                const v1_norm = { x: v1.x / mag1, y: v1.y / mag1 };
+                const v2_norm = { x: v2.x / mag2, y: v2.y / mag2 };
+                let bisector_dir = { x: v1_norm.x + v2_norm.x, y: v1_norm.y + v2_norm.y };
+                if (Math.hypot(bisector_dir.x, bisector_dir.y) < 0.0001) {
+                    bisector_dir = { x: -v1_norm.y, y: v1_norm.x };
+                }
+                info.constraints.push({
+                    type: 'line',
+                    line: {
                         p1: currentPoint,
                         p2: { x: currentPoint.x + bisector_dir.x, y: currentPoint.y + bisector_dir.y }
-                    };
-                } else {
-                    // Cannot determine line if a segment has zero length, so no constraint
-                    constraint = null;
-                }
-            }
-
-            if (constraint) {
-                setDragInfo({
-                    pointIndex: idx,
-                    constraint,
-                    ...info
+                    }
                 });
             }
+        }
+
+        // Edge constraints
+        if (isIncomingEdgeLocked) {
+            info.constraints.push({
+                type: 'radius',
+                center: points[prevPointIndex],
+                radius: getDistance(points[prevPointIndex], points[idx])
+            });
+        }
+        if (isOutgoingEdgeLocked) {
+            info.constraints.push({
+                type: 'radius',
+                center: points[nextPointIndex],
+                radius: getDistance(points[idx], points[nextPointIndex])
+            });
+        }
+
+        if (info.constraints.length > 0) {
+            setDragInfo(info);
         }
     };
 
@@ -651,27 +645,35 @@ export const useCanvasState = (selectedProfile) => {
         let newPos = e.target.position();
 
         if (isDrawing) {
-            if (snapEnabled) {
+             if (snapEnabled) {
                 const otherPoints = points.filter((_, i) => i !== idx);
                 newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
             }
         } else if (isEditing && dragInfo) {
-            switch (dragInfo.constraint) {
-                case 'fixed':
+            const lineConstraint = dragInfo.constraints.find(c => c.type === 'line');
+            const radiusConstraints = dragInfo.constraints.filter(c => c.type === 'radius');
+
+            if (lineConstraint && radiusConstraints.length === 1) {
+                const intersections = lineCircleIntersection(lineConstraint.line.p1, lineConstraint.line.p2, radiusConstraints[0].center, radiusConstraints[0].radius);
+                if (intersections.length > 0) {
+                    newPos = intersections.reduce((prev, curr) => getDistance(newPos, prev) < getDistance(newPos, curr) ? prev : curr);
+                } else {
+                    newPos = points[idx]; // No valid position, stay put
+                }
+            } else if (lineConstraint) {
+                newPos = projectPointOnLine(newPos, lineConstraint.line.p1, lineConstraint.line.p2);
+            } else if (radiusConstraints.length === 2) {
+                 const intersections = circleCircleIntersection(radiusConstraints[0].center, radiusConstraints[0].radius, radiusConstraints[1].center, radiusConstraints[1].radius);
+                 if (intersections.length > 0) {
+                    newPos = intersections.reduce((prev, curr) => getDistance(newPos, prev) < getDistance(newPos, curr) ? prev : curr);
+                 } else {
                     newPos = points[idx];
-                    break;
-                case 'radius':
-                    newPos = getPointOnCircle(newPos, dragInfo.center, dragInfo.radius);
-                    break;
-                case 'line':
-                    newPos = projectPointOnLine(newPos, dragInfo.line.p1, dragInfo.line.p2);
-                    break;
-                default:
-                    if (snapEnabled) {
-                        const otherPoints = points.filter((_, i) => i !== idx);
-                        newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
-                    }
-                    break;
+                 }
+            } else if (radiusConstraints.length === 1) {
+                newPos = getPointOnCircle(newPos, radiusConstraints[0].center, radiusConstraints[0].radius);
+            } else if (snapEnabled) {
+                 const otherPoints = points.filter((_, i) => i !== idx);
+                 newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
             }
         } else if (snapEnabled) {
             const otherPoints = points.filter((_, i) => i !== idx);
