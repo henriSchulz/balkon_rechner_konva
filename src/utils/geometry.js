@@ -119,3 +119,15 @@ export const lineCircleIntersection = (lineP1, lineP2, circleCenter, radius) => 
     }
     return intersections;
 };
+
+export const lineLineIntersection = (l1p1, l1p2, l2p1, l2p2) => {
+    const d = (l1p1.x - l1p2.x) * (l2p1.y - l2p2.y) - (l1p1.y - l1p2.y) * (l2p1.x - l2p2.x);
+    if (d === 0) {
+        return null; // Parallel lines
+    }
+    const t = ((l1p1.x - l2p1.x) * (l2p1.y - l2p2.y) - (l1p1.y - l2p1.y) * (l2p1.x - l2p2.x)) / d;
+    return {
+        x: l1p1.x + t * (l1p2.x - l1p1.x),
+        y: l1p1.y + t * (l1p2.y - l1p1.y),
+    };
+};

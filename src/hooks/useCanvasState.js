@@ -7,7 +7,8 @@ import {
     projectPointOnLine,
     getPointOnCircle,
     circleCircleIntersection,
-    lineCircleIntersection
+    lineCircleIntersection,
+    lineLineIntersection
 } from '../utils/geometry';
 import { getSnappedPos } from '../utils/snap';
 import { calculateProfiles } from '../utils/profiles';
@@ -592,32 +593,30 @@ export const useCanvasState = (selectedProfile) => {
 
         let info = { pointIndex: idx, constraints: [] };
 
-        // Angle constraint is highest priority
-        if (isCurrentAngleLocked) {
-            const prevPoint = points[prevPointIndex];
-            const currentPoint = points[idx];
-            const nextPoint = points[nextPointIndex];
+        // New angle constraint logic: applies when dragging a point *adjacent* to a locked angle
+        const isPrevAngleLocked = lockedAngles.has(prevPointIndex);
+        const isNextAngleLocked = lockedAngles.has(nextPointIndex);
 
-            const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
-            const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
-            const mag1 = Math.hypot(v1.x, v1.y);
-            const mag2 = Math.hypot(v2.x, v2.y);
-
-            if (mag1 > 0.0001 && mag2 > 0.0001) {
-                const v1_norm = { x: v1.x / mag1, y: v1.y / mag1 };
-                const v2_norm = { x: v2.x / mag2, y: v2.y / mag2 };
-                let bisector_dir = { x: v1_norm.x + v2_norm.x, y: v1_norm.y + v2_norm.y };
-                if (Math.hypot(bisector_dir.x, bisector_dir.y) < 0.0001) {
-                    bisector_dir = { x: -v1_norm.y, y: v1_norm.x };
+        if (isPrevAngleLocked) {
+            // Dragging point idx, angle is at prevPointIndex. The line is defined by idx and prevPointIndex.
+            info.constraints.push({
+                type: 'line',
+                line: {
+                    p1: points[idx],
+                    p2: points[prevPointIndex]
                 }
-                info.constraints.push({
-                    type: 'line',
-                    line: {
-                        p1: currentPoint,
-                        p2: { x: currentPoint.x + bisector_dir.x, y: currentPoint.y + bisector_dir.y }
-                    }
-                });
-            }
+            });
+        }
+
+        if (isNextAngleLocked) {
+             // Dragging point idx, angle is at nextPointIndex. The line is defined by idx and nextPointIndex.
+             info.constraints.push({
+                type: 'line',
+                line: {
+                    p1: points[idx],
+                    p2: points[nextPointIndex]
+                }
+            });
         }
 
         // Edge constraints
@@ -650,18 +649,28 @@ export const useCanvasState = (selectedProfile) => {
                 newPos = getSnappedPos(newPos, otherPoints, null, scale, setSnapLines);
             }
         } else if (isEditing && dragInfo) {
-            const lineConstraint = dragInfo.constraints.find(c => c.type === 'line');
+            const lineConstraints = dragInfo.constraints.filter(c => c.type === 'line');
             const radiusConstraints = dragInfo.constraints.filter(c => c.type === 'radius');
 
-            if (lineConstraint && radiusConstraints.length === 1) {
-                const intersections = lineCircleIntersection(lineConstraint.line.p1, lineConstraint.line.p2, radiusConstraints[0].center, radiusConstraints[0].radius);
+            if (lineConstraints.length === 2) {
+                const intersection = lineLineIntersection(
+                    lineConstraints[0].line.p1, lineConstraints[0].line.p2,
+                    lineConstraints[1].line.p1, lineConstraints[1].line.p2
+                );
+                if (intersection) {
+                    newPos = intersection;
+                } else {
+                    newPos = points[idx]; // Parallel lines, stay put
+                }
+            } else if (lineConstraints.length === 1 && radiusConstraints.length === 1) {
+                const intersections = lineCircleIntersection(lineConstraints[0].line.p1, lineConstraints[0].line.p2, radiusConstraints[0].center, radiusConstraints[0].radius);
                 if (intersections.length > 0) {
                     newPos = intersections.reduce((prev, curr) => getDistance(newPos, prev) < getDistance(newPos, curr) ? prev : curr);
                 } else {
                     newPos = points[idx]; // No valid position, stay put
                 }
-            } else if (lineConstraint) {
-                newPos = projectPointOnLine(newPos, lineConstraint.line.p1, lineConstraint.line.p2);
+            } else if (lineConstraints.length === 1) {
+                newPos = projectPointOnLine(newPos, lineConstraints[0].line.p1, lineConstraints[0].line.p2);
             } else if (radiusConstraints.length === 2) {
                  const intersections = circleCircleIntersection(radiusConstraints[0].center, radiusConstraints[0].radius, radiusConstraints[1].center, radiusConstraints[1].radius);
                  if (intersections.length > 0) {

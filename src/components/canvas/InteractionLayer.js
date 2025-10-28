@@ -41,58 +41,25 @@ const InteractionLayer = ({
               );
           }
           if (constraint.type === 'line') {
-            const p_len = points.length;
-            const draggedPoint = points[dragInfo.pointIndex];
-            const prevPoint = points[(dragInfo.pointIndex - 1 + p_len) % p_len];
-            const nextPoint = points[(dragInfo.pointIndex + 1) % p_len];
-
-            // Vektor von prevPoint zu draggedPoint
-            const v1 = { x: draggedPoint.x - prevPoint.x, y: draggedPoint.y - prevPoint.y };
-            // Vektor von nextPoint zu draggedPoint
-            const v2 = { x: draggedPoint.x - nextPoint.x, y: draggedPoint.y - nextPoint.y };
-
-            // Die Richtung des Bisectors, die im Hook berechnet wurde
-            const bisectorDir = {
-                x: constraint.line.p2.x - constraint.line.p1.x,
-                y: constraint.line.p2.y - constraint.line.p1.y
-            };
+            // The line for the angle constraint is defined by the two points p1 and p2 from the hook.
+            // We extend this line in both directions for visualization.
+            const { p1, p2 } = constraint.line;
+            const dir = { x: p2.x - p1.x, y: p2.y - p1.y };
 
             return (
-                <React.Fragment key={`guide-${index}`}>
-                    {/* Linie 1: Die Haupt-Bewegungslinie entlang des Bisectors, aktualisiert mit der aktuellen Position */}
-                    <Line
-                        points={[
-                            draggedPoint.x - 1000 * bisectorDir.x, draggedPoint.y - 1000 * bisectorDir.y,
-                            draggedPoint.x + 1000 * bisectorDir.x, draggedPoint.y + 1000 * bisectorDir.y
-                        ]}
-                        stroke="#0000ff"
-                        strokeWidth={1.5}
-                        dash={[6, 4]}
-                        listening={false}
-                    />
-                    {/* Linie 2: Verlängerung der Kante vom vorherigen Punkt */}
-                    <Line
-                        points={[
-                            prevPoint.x - v1.x * 1000, prevPoint.y - v1.y * 1000,
-                            prevPoint.x + v1.x * 1000, prevPoint.y + v1.y * 1000
-                        ]}
-                        stroke="#CF2B32"
-                        strokeWidth={1}
-                        dash={[2, 2]}
-                        listening={false}
-                    />
-                    {/* Linie 3: Verlängerung der Kante vom nächsten Punkt */}
-                    <Line
-                        points={[
-                            nextPoint.x - v2.x * 1000, nextPoint.y - v2.y * 1000,
-                            nextPoint.x + v2.x * 1000, nextPoint.y + v2.y * 1000
-                        ]}
-                        stroke="#CF2B32"
-                        strokeWidth={1}
-                        dash={[2, 2]}
-                        listening={false}
-                    />
-                </React.Fragment>
+                <Line
+                    key={`guide-${index}`}
+                    points={[
+                        p1.x - 1000 * dir.x,
+                        p1.y - 1000 * dir.y,
+                        p1.x + 1000 * dir.x,
+                        p1.y + 1000 * dir.y
+                    ]}
+                    stroke="#CF2B32"
+                    strokeWidth={1.5}
+                    dash={[6, 4]}
+                    listening={false}
+                />
             );
           }
           return null;
