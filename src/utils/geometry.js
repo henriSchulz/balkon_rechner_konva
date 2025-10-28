@@ -71,3 +71,27 @@ export const getPointOnCircle = (point, center, radius) => {
         y: center.y + (dy / dist) * radius,
     };
 };
+
+export const circleCircleIntersection = (c1, r1, c2, r2) => {
+    const d = getDistance(c1, c2);
+
+    if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) {
+        return []; // No intersection or concentric
+    }
+
+    const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+    const h = Math.sqrt(r1 * r1 - a * a);
+    const x2 = c1.x + a * (c2.x - c1.x) / d;
+    const y2 = c1.y + a * (c2.y - c1.y) / d;
+
+    const p1 = {
+        x: x2 + h * (c2.y - c1.y) / d,
+        y: y2 - h * (c2.x - c1.x) / d,
+    };
+    const p2 = {
+        x: x2 - h * (c2.y - c1.y) / d,
+        y: y2 + h * (c2.x - c1.x) / d,
+    };
+
+    return [p1, p2];
+};

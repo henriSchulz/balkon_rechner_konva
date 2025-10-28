@@ -5,7 +5,8 @@ import {
     getDistance,
     calculatePolygonArea,
     projectPointOnLine,
-    getPointOnCircle
+    getPointOnCircle,
+    circleCircleIntersection
 } from '../utils/geometry';
 import { getSnappedPos } from '../utils/snap';
 import { calculateProfiles } from '../utils/profiles';
@@ -340,42 +341,58 @@ export const useCanvasState = (selectedProfile) => {
         if (editingEdge === null || !newLength || isNaN(newLength)) return;
 
         const edgeIndex = editingEdge;
-        const point1Index = edgeIndex;
-        const point2Index = (edgeIndex + 1) % points.length;
-        const point1 = points[point1Index];
-        const point2 = points[point2Index];
-
-        const prevEdgeIndex = (edgeIndex - 1 + points.length) % points.length;
-        const nextEdgeIndex = (edgeIndex + 1) % points.length;
-        const isPrevEdgeLocked = lockedEdges.has(prevEdgeIndex);
-        const isNextEdgeLocked = lockedEdges.has(nextEdgeIndex);
+        const p_len = points.length;
+        const p1_idx = edgeIndex;
+        const p2_idx = (edgeIndex + 1) % p_len;
 
         const newDistancePixels = metersToPixels(parseFloat(newLength), scale);
-        const dx = point2.x - point1.x;
-        const dy = point2.y - point1.y;
-        const currentLength = Math.sqrt(dx * dx + dy * dy);
-        const unitX = dx / currentLength;
-        const unitY = dy / currentLength;
-        const newPoints = [...points];
 
-        if (isPrevEdgeLocked && isNextEdgeLocked) {
-            setErrorMessage('Kante kann nicht bearbeitet werden - beide angrenzenden Kanten sind gesperrt!');
-            setTimeout(() => setErrorMessage(''), 3000);
-        } else if (isPrevEdgeLocked) {
-            newPoints[point2Index] = {
-                x: point1.x + unitX * newDistancePixels,
-                y: point1.y + unitY * newDistancePixels
-            };
-        } else if (isNextEdgeLocked) {
-            newPoints[point1Index] = {
-                x: point2.x - unitX * newDistancePixels,
-                y: point2.y - unitY * newDistancePixels
-            };
+        // Create a copy of points to modify
+        let newPoints = [...points];
+
+        // Helper function to update a point's position.
+        // The problematic recursive propagation has been removed to localize changes.
+        const updatePoint = (index, newPos) => {
+            newPoints[index] = newPos;
+        };
+
+        const p1 = newPoints[p1_idx];
+        const p2 = newPoints[p2_idx];
+
+        const p0_idx = (p1_idx - 1 + p_len) % p_len;
+        const p3_idx = (p2_idx + 1) % p_len;
+
+        const isP0P1Locked = lockedEdges.has(p0_idx);
+        const isP2P3Locked = lockedEdges.has(p2_idx);
+
+        if (isP0P1Locked && isP2P3Locked) {
+             setErrorMessage('Kante kann nicht bearbeitet werden - beide angrenzenden Kanten sind gesperrt!');
+             setTimeout(() => setErrorMessage(''), 3000);
+             return;
+        } else if (isP0P1Locked) {
+            // p1 is fixed, move p2
+            const newP2 = getPointOnCircle(p2, p1, newDistancePixels);
+            updatePoint(p2_idx, newP2);
+        } else if (isP2P3Locked) {
+            // p2 is fixed, move p1
+            const newP1 = getPointOnCircle(p1, p2, newDistancePixels);
+            updatePoint(p1_idx, newP1);
         } else {
-            const lengthDifference = newDistancePixels - getDistance(point1, point2);
+            // Neither are locked, move both towards/away from the center
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const currentLength = Math.hypot(dx, dy);
+            const unitX = currentLength > 0 ? dx / currentLength : 0;
+            const unitY = currentLength > 0 ? dy / currentLength : 0;
+
+            const lengthDifference = newDistancePixels - currentLength;
             const moveDistance = lengthDifference / 2;
-            newPoints[point1Index] = { x: point1.x - unitX * moveDistance, y: point1.y - unitY * moveDistance };
-            newPoints[point2Index] = { x: point2.x + unitX * moveDistance, y: point2.y + unitY * moveDistance };
+
+            const newP1 = { x: p1.x - unitX * moveDistance, y: p1.y - unitY * moveDistance };
+            const newP2 = { x: p2.x + unitX * moveDistance, y: p2.y + unitY * moveDistance };
+
+            updatePoint(p1_idx, newP1, new Set());
+            updatePoint(p2_idx, newP2, new Set());
         }
 
         setPoints(newPoints);
@@ -593,18 +610,31 @@ export const useCanvasState = (selectedProfile) => {
                 const v1 = { x: prevPoint.x - currentPoint.x, y: prevPoint.y - currentPoint.y };
                 const v2 = { x: nextPoint.x - currentPoint.x, y: nextPoint.y - currentPoint.y };
 
-                const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
-                const v1_norm = { x: v1.x / mag1, y: v1.y / mag1 };
+                const mag1 = Math.hypot(v1.x, v1.y);
+                const mag2 = Math.hypot(v2.x, v2.y);
 
-                const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
-                const v2_norm = { x: v2.x / mag2, y: v2.y / mag2 };
+                if (mag1 > 0.0001 && mag2 > 0.0001) {
+                    const v1_norm = { x: v1.x / mag1, y: v1.y / mag1 };
+                    const v2_norm = { x: v2.x / mag2, y: v2.y / mag2 };
 
-                const bisector_dir = { x: v1_norm.x + v2_norm.x, y: v1_norm.y + v2_norm.y };
+                    // The direction of the angle bisector is the sum of the normalized vectors
+                    let bisector_dir = { x: v1_norm.x + v2_norm.x, y: v1_norm.y + v2_norm.y };
+                    const mag_bisector = Math.hypot(bisector_dir.x, bisector_dir.y);
 
-                info.line = {
-                    p1: currentPoint,
-                    p2: { x: currentPoint.x + bisector_dir.x, y: currentPoint.y + bisector_dir.y }
-                };
+                    // If the magnitude is close to zero, the vectors are nearly opposite (180 degrees)
+                    // In this case, the movement line is perpendicular to the segments.
+                    if (mag_bisector < 0.0001) {
+                        bisector_dir = { x: -v1_norm.y, y: v1_norm.x }; // Perpendicular to v1
+                    }
+
+                    info.line = {
+                        p1: currentPoint,
+                        p2: { x: currentPoint.x + bisector_dir.x, y: currentPoint.y + bisector_dir.y }
+                    };
+                } else {
+                    // Cannot determine line if a segment has zero length, so no constraint
+                    constraint = null;
+                }
             }
 
             if (constraint) {
