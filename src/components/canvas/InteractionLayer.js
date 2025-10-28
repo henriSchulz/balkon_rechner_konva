@@ -25,29 +25,38 @@ const InteractionLayer = ({
   return (
     <Layer>
       {/* Visual guides for constrained dragging */}
-      {dragInfo && dragInfo.constraint === 'radius' && (
-          <Circle
-              x={dragInfo.center.x}
-              y={dragInfo.center.y}
-              radius={dragInfo.radius}
-              stroke="#0000ff"
-              strokeWidth={1}
-              dash={[4, 4]}
-              listening={false}
-          />
-      )}
-      {dragInfo && dragInfo.constraint === 'line' && (
-          <Line
-              points={[dragInfo.line.p1.x - 1000 * (dragInfo.line.p2.x - dragInfo.line.p1.x),
-                       dragInfo.line.p1.y - 1000 * (dragInfo.line.p2.y - dragInfo.line.p1.y),
-                       dragInfo.line.p1.x + 1000 * (dragInfo.line.p2.x - dragInfo.line.p1.x),
-                       dragInfo.line.p1.y + 1000 * (dragInfo.line.p2.y - dragInfo.line.p1.y)]}
-              stroke="#0000ff"
-              strokeWidth={1}
-              dash={[4, 4]}
-              listening={false}
-          />
-      )}
+      {dragInfo && dragInfo.constraints.map((constraint, index) => {
+          if (constraint.type === 'radius') {
+              return (
+                  <Circle
+                      key={`guide-${index}`}
+                      x={constraint.center.x}
+                      y={constraint.center.y}
+                      radius={constraint.radius}
+                      stroke="#0000ff"
+                      strokeWidth={1}
+                      dash={[4, 4]}
+                      listening={false}
+                  />
+              );
+          }
+          if (constraint.type === 'line') {
+              return (
+                  <Line
+                      key={`guide-${index}`}
+                      points={[constraint.line.p1.x - 1000 * (constraint.line.p2.x - constraint.line.p1.x),
+                               constraint.line.p1.y - 1000 * (constraint.line.p2.y - constraint.line.p1.y),
+                               constraint.line.p1.x + 1000 * (constraint.line.p2.x - constraint.line.p1.x),
+                               constraint.line.p1.y + 1000 * (constraint.line.p2.y - constraint.line.p1.y)]}
+                      stroke="#0000ff"
+                      strokeWidth={1}
+                      dash={[4, 4]}
+                      listening={false}
+                  />
+              );
+          }
+          return null;
+      })}
       {/* Snap-Hilfslinien */}
       {snapLines.map((line, i) => (
         <Line
