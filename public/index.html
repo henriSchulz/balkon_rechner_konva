@@ -17,102 +17,11 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-      <script>
+    <script>
+      // Fallback data structure
 
-        // product_id: 3770
-       // variation_id: 12441 für große Dielen 
-
-        window.WC_PRODUCT_VARIATIONS = [ { "id": 8517, "color": "natur", "length": 4050 },
-      { "id": 8518, "color": "natur", "length": 5050 },
-      { "id": 8519, "color": "natur", "length": 6050 },
-      { "id": 8520, "color": "natur", "length": 6900 },
-      { "id": 8538, "color": "weissaluminium-ral-9006", "length": 820 },
-      { "id": 8539, "color": "weissaluminium-ral-9006", "length": 1000 },
-      { "id": 8540, "color": "weissaluminium-ral-9006", "length": 1200 },
-      { "id": 8541, "color": "weissaluminium-ral-9006", "length": 1250 },
-      { "id": 8542, "color": "weissaluminium-ral-9006", "length": 1370 },
-      { "id": 8543, "color": "weissaluminium-ral-9006", "length": 1500 },
-      { "id": 8544, "color": "weissaluminium-ral-9006", "length": 1660 },
-      { "id": 8545, "color": "weissaluminium-ral-9006", "length": 1710 },
-      { "id": 8546, "color": "weissaluminium-ral-9006", "length": 2000 },
-      { "id": 8547, "color": "weissaluminium-ral-9006", "length": 2280 },
-      { "id": 8549, "color": "weissaluminium-ral-9006", "length": 2510 },
-      { "id": 8548, "color": "weissaluminium-ral-9006", "length": 3010 },
-      { "id": 8550, "color": "weissaluminium-ral-9006", "length": 3430 },
-      { "id": 8551, "color": "weissaluminium-ral-9006", "length": 4050 },
-      { "id": 8552, "color": "weissaluminium-ral-9006", "length": 5050 },
-      { "id": 8553, "color": "weissaluminium-ral-9006", "length": 6050 },
-      { "id": 8554, "color": "weissaluminium-ral-9006", "length": 6900 },
-      // Grey Aluminium Small Size
-      { "id": 8572, "color": "graualuminium-ral-9007", "length": 820 },
-      { "id": 8573, "color": "graualuminium-ral-9007", "length": 1000 },
-      { "id": 8574, "color": "graualuminium-ral-9007", "length": 1200 },
-      { "id": 8575, "color": "graualuminium-ral-9007", "length": 1250 },
-      { "id": 8576, "color": "graualuminium-ral-9007", "length": 1370 },
-      { "id": 8577, "color": "graualuminium-ral-9007", "length": 1500 },
-      { "id": 8579, "color": "graualuminium-ral-9007", "length": 1660 },
-      { "id": 8578, "color": "graualuminium-ral-9007", "length": 1710 },
-      { "id": 8580, "color": "graualuminium-ral-9007", "length": 2000 },
-      { "id": 8581, "color": "graualuminium-ral-9007", "length": 2280 },
-      { "id": 8582, "color": "graualuminium-ral-9007", "length": 2510 },
-      { "id": 8583, "color": "graualuminium-ral-9007", "length": 3010 },
-      { "id": 8584, "color": "graualuminium-ral-9007", "length": 3430 },
-      { "id": 8585, "color": "graualuminium-ral-9007", "length": 4050 },
-      { "id": 8586, "color": "graualuminium-ral-9007", "length": 5050 },
-      { "id": 8587, "color": "graualuminium-ral-9007", "length": 6050 },
-      { "id": 8588, "color": "graualuminium-ral-9007", "length": 6900 },
-      //=========================
-      { "id": 8606, "color": "eisenglimmer-grau-db-703", "length": 820 },
-      { "id": 8607, "color": "eisenglimmer-grau-db-703", "length": 1000 },
-      { "id": 8609, "color": "eisenglimmer-grau-db-703", "length": 1200 },
-      { "id": 8608, "color": "eisenglimmer-grau-db-703", "length": 1250 },
-      { "id": 8610, "color": "eisenglimmer-grau-db-703", "length": 1370 },
-      { "id": 8611, "color": "eisenglimmer-grau-db-703", "length": 1500 },
-      { "id": 8612, "color": "eisenglimmer-grau-db-703", "length": 1660 },
-      { "id": 8613, "color": "eisenglimmer-grau-db-703", "length": 1710 },
-      { "id": 8614, "color": "eisenglimmer-grau-db-703", "length": 2000 },
-      { "id": 8615, "color": "eisenglimmer-grau-db-703", "length": 2280 },
-      { "id": 8616, "color": "eisenglimmer-grau-db-703", "length": 2510 },
-      { "id": 8617, "color": "eisenglimmer-grau-db-703", "length": 3010 },
-      { "id": 8618, "color": "eisenglimmer-grau-db-703", "length": 3430 },
-      { "id": 8619, "color": "eisenglimmer-grau-db-703", "length": 4050 },
-      { "id": 8620, "color": "eisenglimmer-grau-db-703", "length": 5050 },
-      { "id": 8621, "color": "eisenglimmer-grau-db-703", "length": 6050 },
-      { "id": 8622, "color": "eisenglimmer-grau-db-703", "length": 6900 },
-      { "id": 17038, "color": "lehmbraun-ral-8003", "length": 820 },
-      { "id": 17046, "color": "lehmbraun-ral-8003", "length": 1000 },
-      { "id": 17045, "color": "lehmbraun-ral-8003", "length": 1200 },
-      { "id": 17044, "color": "lehmbraun-ral-8003", "length": 1250 },
-      { "id": 17043, "color": "lehmbraun-ral-8003", "length": 1370 },
-      { "id": 17042, "color": "lehmbraun-ral-8003", "length": 1500 },
-      { "id": 17041, "color": "lehmbraun-ral-8003", "length": 1660 },
-      { "id": 17059, "color": "lehmbraun-ral-8003", "length": 1710 },
-      { "id": 17060, "color": "lehmbraun-ral-8003", "length": 2000 },
-      { "id": 17061, "color": "lehmbraun-ral-8003", "length": 2280 },
-      { "id": 17062, "color": "lehmbraun-ral-8003", "length": 2510 },
-      { "id": 17066, "color": "lehmbraun-ral-8003", "length": 3010 },
-      { "id": 17065, "color": "lehmbraun-ral-8003", "length": 3430 },
-      { "id": 17063, "color": "lehmbraun-ral-8003", "length": 4050 },
-      { "id": 17064, "color": "lehmbraun-ral-8003", "length": 5050 },
-      { "id": 17067, "color": "lehmbraun-ral-8003", "length": 6050 },
-      { "id": 17068, "color": "lehmbraun-ral-8003", "length": 6900 },
-      { "id": 8623, "color": "zirbelkiefer-hell", "length": 820 },
-      { "id": 8624, "color": "zirbelkiefer-hell", "length": 1000 },
-      { "id": 8625, "color": "zirbelkiefer-hell", "length": 1200 },
-      { "id": 8626, "color": "zirbelkiefer-hell", "length": 1250 },
-      { "id": 8627, "color": "zirbelkiefer-hell", "length": 1370 },
-      { "id": 8628, "color": "zirbelkiefer-hell", "length": 1500 },
-      { "id": 8629, "color": "zirbelkiefer-hell", "length": 1660 },
-      { "id": 8630, "color": "zirbelkiefer-hell", "length": 1710 },
-      { "id": 8631, "color": "zirbelkiefer-hell", "length": 2000 },
-      { "id": 8632, "color": "zirbelkiefer-hell", "length": 2280 },
-      { "id": 8633, "color": "zirbelkiefer-hell", "length": 2510 },
-      { "id": 8634, "color": "zirbelkiefer-hell", "length": 3010 },
-      { "id": 8635, "color": "zirbelkiefer-hell", "length": 3430 },
-      { "id": 8636, "color": "zirbelkiefer-hell", "length": 4050 },
-      { "id": 8637, "color": "zirbelkiefer-hell", "length": 5050 },
-      { "id": 8638, "color": "zirbelkiefer-hell", "length": 6050 }
-    ]
-      </script>
+      // checkout if window.WC_PRODUCT_VARIATIONS exisits or is empty
+     
+    </script>
   </body>
 </html>

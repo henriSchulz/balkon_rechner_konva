@@ -17,7 +17,11 @@ export const PRODUCTS = {
     S: window.WC_PRODUCT_VARIATIONS["S"].map(e => ({
       length: e.length,
       id: e.id,
-    }))
+    })),
+  L: window.WC_PRODUCT_VARIATIONS["L"].map(e => ({
+      length: e.length,
+      id: e.id,
+    })),
 }
 
 
@@ -63,7 +67,7 @@ export const PRODUCTS = {
 // }
 
 
-export async function addToCart(productId = PRODUCT_ID, quantity = 1) {
+export async function addToCart(productId, quantity = 1) {
     try {
       const params = window.wc_add_to_cart_params;
       if (!params) {
