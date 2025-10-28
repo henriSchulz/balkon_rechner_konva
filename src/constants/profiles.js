@@ -4,7 +4,10 @@ export const BODENPROFILE_LAENGEN_MM = [
 ];
 
 // Regel II: Feste Deckbreite des Profils
-export const BODENPROFIL_BREITE_MM = 140;
+export const BODENPROFIL_BREITE_MM = {
+    S: 140,
+    L: 200,
+};
 
 // Regel IV: Zwingend einzuhaltender Randabstand
 export const RANDABSTAND_MM = 10;

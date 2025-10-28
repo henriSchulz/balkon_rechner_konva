@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { addToCart, PRODUCTS } from '../../utils/api';
 import { useLocalization } from '../../hooks/useLocalization';
 
-const ShoppingList = ({ profileData }) => {
+const ShoppingList = ({ profileData, selectedProfile, setSelectedProfile }) => {
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,7 +18,7 @@ const ShoppingList = ({ profileData }) => {
     
     console.log('🛒 Starte Warenkorb-Hinzufügung mit profileData:', profileData);
     console.log('📊 Profile Counts:', profileData.profileCounts);
-    console.log('📦 Verfügbare Produkte:', PRODUCTS.S);
+    console.log('📦 Verfügbare Produkte:', PRODUCTS[selectedProfile]);
     
     try {
       const results = [];
@@ -33,13 +33,13 @@ const ShoppingList = ({ profileData }) => {
           continue;
         }
 
-        const product = PRODUCTS.S.find(p => p.length === parseInt(length));
+        const product = PRODUCTS[selectedProfile].find(p => p.length === parseInt(length));
         
         console.log(`🔍 Gesucht: ${length}mm, Gefunden:`, product);
         
         if (!product) {
           console.warn(`⚠️ Kein Produkt für Länge ${length}mm gefunden`);
-          console.log(`🔍 Verfügbare Längen:`, PRODUCTS.S.map(p => p.length));
+          console.log(`🔍 Verfügbare Längen:`, PRODUCTS[selectedProfile].map(p => p.length));
           results.push({ success: false, length, reason: 'Produkt nicht gefunden' });
           failedAdds++;
           continue;
@@ -94,6 +94,31 @@ const ShoppingList = ({ profileData }) => {
           {t('shoppingList.title')}
         </h3>
       </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">{t('shoppingList.profileType')}</label>
+        <div className="flex gap-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="S"
+              checked={selectedProfile === 'S'}
+              onChange={() => setSelectedProfile('S')}
+              className="form-radio h-4 w-4 text-accent focus:ring-accent"
+            />
+            <span className="ml-2 text-sm text-gray-800">S (140mm)</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              value="L"
+              checked={selectedProfile === 'L'}
+              onChange={() => setSelectedProfile('L')}
+              className="form-radio h-4 w-4 text-accent focus:ring-accent"
+            />
+            <span className="ml-2 text-sm text-gray-800">L (200mm)</span>
+          </label>
+        </div>
+      </div>
         <button 
           className={`flex justify-center gap-4 items-center w-full mb-3 px-3 py-2 text-white text-md font-medium rounded-md transition-colors duration-200 ${
             isLoading 
@@ -119,7 +144,7 @@ const ShoppingList = ({ profileData }) => {
           )}
         </button>
       <div className="text-sm text-gray-700">
-        <div className="font-medium mb-2 text-gray-800">{t('shoppingList.floorProfilesLabel')}</div>
+        <div className="font-medium mb-2 text-gray-800">{t('shoppingList.floorProfilesLabel')} ({selectedProfile === 'S' ? '140mm' : '200mm'})</div>
         {Object.keys(profileData.profileCounts).length > 0 ? (
           <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
             {Object.entries(profileData.profileCounts)

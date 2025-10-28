@@ -42,7 +42,7 @@ const getInitialState = () => {
     };
 };
 
-export const useCanvasState = () => {
+export const useCanvasState = (selectedProfile) => {
     // Initialize state from localStorage using a function to ensure it runs only once
     const [initialState] = useState(getInitialState);
 
@@ -652,8 +652,8 @@ export const useCanvasState = () => {
         const allPointsArray = points.map(p => [p.x, p.y]);
         const wallP1Array = [wallP1.x, wallP1.y];
         const wallP2Array = [wallP2.x, wallP2.y];
-        return calculateProfiles(allPointsArray, wallP1Array, wallP2Array, scale);
-    }, [points, hauswandEdges, scale]);
+        return calculateProfiles(allPointsArray, wallP1Array, wallP2Array, scale, selectedProfile);
+    }, [points, hauswandEdges, scale, selectedProfile]);
 
     return {
         // State
