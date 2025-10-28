@@ -19,7 +19,7 @@ const x_at_y = (p1, p2, y) => {
   return x1 + (x2 - x1) * (y - y1) / (y2 - y1);
 };
 
-export const calculateProfiles = (allPoints, wallP1, wallP2, scale) => {
+export const calculateProfiles = (allPoints, wallP1, wallP2, scale, selectedProfile) => {
   if (allPoints.length < 3) return { profileDetails: [], profileCounts: {} };
 
   // Die Logik zur Bestimmung der Wandseite und zur Rotation bleibt bestehen.
@@ -28,7 +28,7 @@ export const calculateProfiles = (allPoints, wallP1, wallP2, scale) => {
   const rotationAngle = -wallAngle + Math.PI / 2;
 
   const rotatedPoints = allPoints.map(p => rotatePoint(p, rotationAngle, wallP1));
-  const profilBreitePx = (BODENPROFIL_BREITE_MM / 1000) * scale;
+  const profilBreitePx = (BODENPROFIL_BREITE_MM[selectedProfile] / 1000) * scale;
   const randabstandPx = (RANDABSTAND_MM / 1000) * scale;
   
   const profileCounts = {};

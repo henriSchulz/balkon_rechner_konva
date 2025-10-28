@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCanvasState } from '../hooks/useCanvasState';
 import { useLocalization } from '../hooks/useLocalization';
 import InfoPanel from './ui/InfoPanel';
@@ -13,6 +13,7 @@ import EditingControls from './ui/EditingControls';
 
 const BalkonRechnerPage = () => {
     const { t } = useLocalization();
+    const [selectedProfile, setSelectedProfile] = useState('S');
     const {
         // State
         points, isDrawing, setIsDrawing, isEditing, setIsEditing, snapEnabled, hoveredEdgeIndex, setHoveredEdgeIndex,
@@ -32,7 +33,7 @@ const BalkonRechnerPage = () => {
 
         // Live data
         liveLength, liveAngle
-    } = useCanvasState();
+    } = useCanvasState(selectedProfile);
 
     const canvasState = {
         points, scale, lockedEdges, hoveredEdgeIndex, hauswandEdges, showLengths, angles, lockedAngles,
@@ -55,7 +56,11 @@ const BalkonRechnerPage = () => {
             <div className="flex justify-center items-start space-x-6">
                 {/* Einkaufsliste links */}
                 <div className="w-70 flex-shrink-0">
-                    <ShoppingList profileData={profileData} />
+                    <ShoppingList
+                        profileData={profileData}
+                        selectedProfile={selectedProfile}
+                        setSelectedProfile={setSelectedProfile}
+                    />
                 </div>
 
                 {/* Canvas in der Mitte */}
