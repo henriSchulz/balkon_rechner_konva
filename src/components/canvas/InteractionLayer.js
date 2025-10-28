@@ -20,9 +20,34 @@ const InteractionLayer = ({
   handleStageClick,
   liveLength,
   liveAngle,
+  dragInfo,
 }) => {
   return (
     <Layer>
+      {/* Visual guides for constrained dragging */}
+      {dragInfo && dragInfo.constraint === 'radius' && (
+          <Circle
+              x={dragInfo.center.x}
+              y={dragInfo.center.y}
+              radius={dragInfo.radius}
+              stroke="#0000ff"
+              strokeWidth={1}
+              dash={[4, 4]}
+              listening={false}
+          />
+      )}
+      {dragInfo && dragInfo.constraint === 'line' && (
+          <Line
+              points={[dragInfo.line.p1.x - 1000 * (dragInfo.line.p2.x - dragInfo.line.p1.x),
+                       dragInfo.line.p1.y - 1000 * (dragInfo.line.p2.y - dragInfo.line.p1.y),
+                       dragInfo.line.p1.x + 1000 * (dragInfo.line.p2.x - dragInfo.line.p1.x),
+                       dragInfo.line.p1.y + 1000 * (dragInfo.line.p2.y - dragInfo.line.p1.y)]}
+              stroke="#0000ff"
+              strokeWidth={1}
+              dash={[4, 4]}
+              listening={false}
+          />
+      )}
       {/* Snap-Hilfslinien */}
       {snapLines.map((line, i) => (
         <Line

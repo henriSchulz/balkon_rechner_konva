@@ -50,3 +50,24 @@ export function calculatePolygonArea(points, scale) {
 
   return areaInSquareMeters;
 }
+
+export const projectPointOnLine = (point, lineStart, lineEnd) => {
+    const L2 = (lineEnd.x - lineStart.x) ** 2 + (lineEnd.y - lineStart.y) ** 2;
+    if (L2 === 0) return lineStart;
+    const t = ((point.x - lineStart.x) * (lineEnd.x - lineStart.x) + (point.y - lineStart.y) * (lineEnd.y - lineStart.y)) / L2;
+    return {
+        x: lineStart.x + t * (lineEnd.x - lineStart.x),
+        y: lineStart.y + t * (lineEnd.y - lineStart.y),
+    };
+};
+
+export const getPointOnCircle = (point, center, radius) => {
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return { x: center.x + radius, y: center.y };
+    return {
+        x: center.x + (dx / dist) * radius,
+        y: center.y + (dy / dist) * radius,
+    };
+};
