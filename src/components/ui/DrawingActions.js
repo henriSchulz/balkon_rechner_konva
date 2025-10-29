@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocalization } from '../../hooks/useLocalization';
 
-const DrawingActions = ({ points, handleUndo, setIsDrawing }) => {
+const DrawingActions = ({ points, handleUndo, handleFinishDrawing }) => {
   const { t } = useLocalization();
 
   return (
@@ -18,7 +18,7 @@ const DrawingActions = ({ points, handleUndo, setIsDrawing }) => {
           {t('drawingControls.undo')}
         </button>
         <button
-          onClick={() => setIsDrawing(false)}
+          onClick={handleFinishDrawing}
           disabled={points.length < 3}
           className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white font-medium rounded-md transition-colors duration-200"
         >

@@ -26,7 +26,7 @@ const BalkonRechnerPage = () => {
         handleStageClick, handleHauswandSetzen, handleClearHauswand, handleLengthClick, handleAngleClick,
         handleLengthChange, handleAngleChange, handleAngleCancel, handleLengthCancel, handleUnlockEdge,
         handleUnlockAngle, handleDeletePoint, handleClearAllPoints, handleDragStart, handleDragMove, handleDragEnd,
-        handleUndo, handleStageContextMenu, handleCloseContextMenu,
+        handleUndo, handleStageContextMenu, handleCloseContextMenu, handleFinishDrawing,
 
         // Derived Data
         angles, polygonArea, profileData,
@@ -74,7 +74,7 @@ const BalkonRechnerPage = () => {
                         <DrawingActions
                             points={points}
                             handleUndo={handleUndo}
-                            setIsDrawing={setIsDrawing}
+                            handleFinishDrawing={handleFinishDrawing}
                         />
                     )}
                     {isEditing && <EditingControls setIsEditing={setIsEditing} />}

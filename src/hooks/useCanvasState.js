@@ -293,7 +293,7 @@ export const useCanvasState = (selectedProfile) => {
 
     const handleStageContextMenu = (e) => {
         e.evt.preventDefault();
-        if (!isEditing) return;
+        if (isDrawing) return;
 
         // Close any other open menus/modals
         handleLengthCancel();
@@ -585,6 +585,11 @@ export const useCanvasState = (selectedProfile) => {
         }
     };
 
+    const handleFinishDrawing = () => {
+        setIsDrawing(false);
+        setIsEditing(true);
+    };
+
     const handleClearAllPoints = () => {
         setPoints([]);
         setLockedEdges(new Set());
@@ -801,6 +806,7 @@ export const useCanvasState = (selectedProfile) => {
         handleDeletePoint,
         handleClearAllPoints,
         handleUndo,
+        handleFinishDrawing,
         handleDragStart,
         handleDragMove,
         handleDragEnd,
