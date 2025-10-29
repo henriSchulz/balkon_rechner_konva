@@ -17,12 +17,16 @@ export const PRODUCTS = {
     S: window.WC_PRODUCT_VARIATIONS["S"].map(e => ({
       length: e.length,
       id: e.id,
+      color: e.color,
     })),
   L: window.WC_PRODUCT_VARIATIONS["L"].map(e => ({
       length: e.length,
       id: e.id,
+      color: e.color,
     })),
 }
+
+export const COLORS = Array.from(new Set(window.WC_PRODUCT_VARIATIONS["S"].map(e => e.color)));
 
 
 // export const PRODUCTS = {

@@ -1,6 +1,6 @@
 import { PRODUCTS } from "../utils/api";
 
-export const BODENPROFILE_LAENGEN_MM = PRODUCTS.S.map(e => e.length);
+export const BODENPROFILE_LAENGEN_MM = Array.from(new Set(PRODUCTS.S.map(e => e.length))).sort((a,b) => a - b);
 
 // Regel II: Feste Deckbreite des Profils
 export const BODENPROFIL_BREITE_MM = {

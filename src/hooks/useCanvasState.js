@@ -20,6 +20,7 @@ const getInitialState = () => {
         const savedState = localStorage.getItem('canvasState');
         if (savedState) {
             const restored = JSON.parse(savedState);
+            // Wenn Punkte geladen werden, ist die Zeichnung NICHT mehr "isDrawing"
             return {
                 points: restored.points || [],
                 snapEnabled: restored.snapEnabled !== false,
