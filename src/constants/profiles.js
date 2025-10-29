@@ -1,9 +1,4 @@
-// Regel III: Korrekte und vollständige Liste der verfügbaren Festlängen
-
 import { PRODUCTS } from "../utils/api";
-
-
-
 
 export const BODENPROFILE_LAENGEN_MM = PRODUCTS.S.map(e => e.length);
 
@@ -15,3 +10,6 @@ export const BODENPROFIL_BREITE_MM = {
 
 // Regel IV: Zwingend einzuhaltender Randabstand
 export const RANDABSTAND_MM = 10;
+
+// NEU: Zwingender Überstand (Verschnitt) für schräge Kanten
+export const ZUSCHNITT_TOLERANZ_MM = 2;
