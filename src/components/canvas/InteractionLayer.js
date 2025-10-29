@@ -14,7 +14,6 @@ const InteractionLayer = ({
   snapLines,
   cursorPos,
   isDrawing,
-  isEditing,
   hoveredPointIndex,
   setHoveredPointIndex,
   handleStageClick,
@@ -163,13 +162,13 @@ const InteractionLayer = ({
             x={point.x}
             y={point.y}
             radius={isClosable ? 10 : 6}
-            fill={isClosable ? '#4CAF50' : (isEditing ? '#f59e0b' : '#2563eb')}
+            fill={isClosable ? '#4CAF50' : (isDrawing ? '#2563eb' : '#f59e0b')}
             stroke="white"
             strokeWidth={2}
-            draggable={isEditing || isDrawing}
-            onDragStart={(e) => (isEditing || isDrawing) && handleDragStart(e, i)}
-            onDragMove={(e) => (isEditing || isDrawing) && handleDragMove(e, i)}
-            onDragEnd={(e) => (isEditing || isDrawing) && handleDragEnd(e, i)}
+            draggable={true}
+            onDragStart={(e) => handleDragStart(e, i)}
+            onDragMove={(e) => handleDragMove(e, i)}
+            onDragEnd={(e) => handleDragEnd(e, i)}
             onMouseEnter={() => isDrawing && i === 0 && setHoveredPointIndex(i)}
             onMouseLeave={() => isDrawing && i === 0 && setHoveredPointIndex(null)}
             onClick={(e) => {
@@ -217,11 +216,9 @@ const InteractionLayer = ({
                     offsetY={5}
                     rotation={degrees}
                     onClick={(e) => {
-                      if (isEditing) {
-                        e.evt.stopPropagation();
-                        if (isAngleLocked) handleUnlockAngle(i);
-                        else if (isAngleEditable) handleAngleClick(i, angles[i]);
-                      }
+                      e.evt.stopPropagation();
+                      if (isAngleLocked) handleUnlockAngle(i);
+                      else if (isAngleEditable) handleAngleClick(i, angles[i]);
                     }}
                   />
                 );
