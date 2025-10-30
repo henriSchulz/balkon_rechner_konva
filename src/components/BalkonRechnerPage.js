@@ -20,13 +20,13 @@ const BalkonRechnerPage = () => {
         hoveredPointIndex, setHoveredPointIndex, hauswandEdges, scale, showLengths,
         editingEdge, editingLength, setEditingLength, lockedEdges, editingAngle, editingAngleValue,
         setEditingAngleValue, lockedAngles, errorMessage, cursorPos, setCursorPos, snapLines,
-        setSnapLines, showProfiles, contextMenu, dragInfo,
+        setSnapLines, showProfiles, contextMenu, dragInfo, history, redoStack,
 
         // Handlers
         handleStageClick, handleHauswandSetzen, handleClearHauswand, handleLengthClick, handleAngleClick,
         handleLengthChange, handleAngleChange, handleAngleCancel, handleLengthCancel, handleUnlockEdge,
         handleUnlockAngle, handleDeletePoint, handleClearAllPoints, handleDragStart, handleDragMove, handleDragEnd,
-        handleUndo, handleStageContextMenu, handleCloseContextMenu,
+        handleUndo, handleRedo, handleStageContextMenu, handleCloseContextMenu,
 
         // Derived Data
         angles, polygonArea, profileData,
@@ -74,10 +74,21 @@ const BalkonRechnerPage = () => {
                         <DrawingActions
                             points={points}
                             handleUndo={handleUndo}
+                            handleRedo={handleRedo}
                             setIsDrawing={setIsDrawing}
+                            canUndo={history.length > 0}
+                            canRedo={redoStack.length > 0}
                         />
                     )}
-                    {isEditing && <EditingControls setIsEditing={setIsEditing} />}
+                    {isEditing && (
+                        <EditingControls
+                            setIsEditing={setIsEditing}
+                            handleUndo={handleUndo}
+                            handleRedo={handleRedo}
+                            canUndo={history.length > 0}
+                            canRedo={redoStack.length > 0}
+                        />
+                    )}
                     {!isDrawing && points.length >= 3 && !isEditing && (
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                             <button

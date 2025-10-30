@@ -1,7 +1,14 @@
 import React from 'react';
 import { useLocalization } from '../../hooks/useLocalization';
 
-const DrawingActions = ({ points, handleUndo, setIsDrawing }) => {
+const DrawingActions = ({
+  points,
+  handleUndo,
+  handleRedo,
+  setIsDrawing,
+  canUndo,
+  canRedo,
+}) => {
   const { t } = useLocalization();
 
   return (
@@ -10,13 +17,22 @@ const DrawingActions = ({ points, handleUndo, setIsDrawing }) => {
         {t('drawingControls.title')}
       </h3>
       <div className="space-y-2">
-        <button
-          onClick={handleUndo}
-          disabled={points.length === 0}
-          className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white font-medium rounded-md transition-colors duration-200"
-        >
-          {t('drawingControls.undo')}
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white font-medium rounded-md transition-colors duration-200"
+          >
+            {t('drawingControls.undo')}
+          </button>
+          <button
+            onClick={handleRedo}
+            disabled={!canRedo}
+            className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white font-medium rounded-md transition-colors duration-200"
+          >
+            {t('drawingControls.redo')}
+          </button>
+        </div>
         <button
           onClick={() => setIsDrawing(false)}
           disabled={points.length < 3}

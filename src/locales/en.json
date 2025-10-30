@@ -28,6 +28,7 @@
   "drawingControls.title": "Drawing Tools",
   "drawingControls.newDrawing": "New Drawing",
   "drawingControls.undo": "Undo",
+  "drawingControls.redo": "Redo",
   "drawingControls.finishDrawing": "Finish Drawing",
 
   "editingControls.title": "Editing Mode",

@@ -78,6 +78,32 @@ export const useCanvasState = (selectedProfile) => {
     const dragStartPoints = useRef(null);
     const isInitialMount = useRef(true);
 
+    const [history, setHistory] = useState([]);
+    const [redoStack, setRedoStack] = useState([]);
+
+    // Centralized state update function to manage history
+    const updateState = (updater) => {
+        setHistory(prevHistory => [...prevHistory, { points, lockedEdges, lockedAngles, hauswandEdges }]);
+        setRedoStack([]); // Clear redo stack on new action
+
+        // This is where the actual state update happens
+        if (typeof updater === 'function') {
+            const currentState = { points, lockedEdges, lockedAngles, hauswandEdges };
+            const newState = updater(currentState);
+            setPoints(newState.points);
+            setLockedEdges(newState.lockedEdges);
+            setLockedAngles(newState.lockedAngles);
+            setHauswandEdges(newState.hauswandEdges);
+        } else {
+            // Handle direct object update
+            const { points: newPoints, lockedEdges: newLockedEdges, lockedAngles: newLockedAngles, hauswandEdges: newHauswandEdges } = updater;
+            setPoints(newPoints);
+            setLockedEdges(newLockedEdges);
+            setLockedAngles(newLockedAngles);
+            setHauswandEdges(newHauswandEdges);
+        }
+    };
+
     // Effekt zur Berechnung von Live-Länge und -Winkel
     useEffect(() => {
         if (isDrawing && points.length > 0 && cursorPos) {
@@ -159,36 +185,38 @@ export const useCanvasState = (selectedProfile) => {
 
     // Hilfsfunktion: Update locked indices nach dem Einfügen eines Punkts
     const updateLockedIndicesAfterInsertion = (insertIndex) => {
-        // Update locked edges
-        const newLockedEdges = new Set();
-        lockedEdges.forEach(edgeIndex => {
-            if (edgeIndex >= insertIndex) {
-                newLockedEdges.add(edgeIndex + 1);
-            } else {
-                newLockedEdges.add(edgeIndex);
-            }
+        updateState(currentState => {
+            const { lockedEdges, lockedAngles, hauswandEdges } = currentState;
+            // Update locked edges
+            const newLockedEdges = new Set();
+            lockedEdges.forEach(edgeIndex => {
+                if (edgeIndex >= insertIndex) {
+                    newLockedEdges.add(edgeIndex + 1);
+                } else {
+                    newLockedEdges.add(edgeIndex);
+                }
+            });
+
+            // Update locked angles
+            const newLockedAngles = new Set();
+            lockedAngles.forEach(angleIndex => {
+                if (angleIndex >= insertIndex) {
+                    newLockedAngles.add(angleIndex + 1);
+                } else {
+                    newLockedAngles.add(angleIndex);
+                }
+            });
+
+            // Update hauswand edges
+            const newHauswandEdges = hauswandEdges.map(edgeIndex => {
+                if (edgeIndex >= insertIndex) {
+                    return edgeIndex + 1;
+                }
+                return edgeIndex;
+            });
+
+            return { ...currentState, lockedEdges: newLockedEdges, lockedAngles: newLockedAngles, hauswandEdges: newHauswandEdges };
         });
-        setLockedEdges(newLockedEdges);
-        
-        // Update locked angles
-        const newLockedAngles = new Set();
-        lockedAngles.forEach(angleIndex => {
-            if (angleIndex >= insertIndex) {
-                newLockedAngles.add(angleIndex + 1);
-            } else {
-                newLockedAngles.add(angleIndex);
-            }
-        });
-        setLockedAngles(newLockedAngles);
-        
-        // Update hauswand edges
-        const newHauswandEdges = hauswandEdges.map(edgeIndex => {
-            if (edgeIndex >= insertIndex) {
-                return edgeIndex + 1;
-            }
-            return edgeIndex;
-        });
-        setHauswandEdges(newHauswandEdges);
     };
 
     useEffect(() => {
@@ -243,7 +271,7 @@ export const useCanvasState = (selectedProfile) => {
                 const lastPoint = points.length > 0 ? points[points.length - 1] : null;
                 pos = getSnappedPos(pos, points, lastPoint, scale, setSnapLines);
             }
-            setPoints([...points, pos]);
+            updateState(currentState => ({ ...currentState, points: [...currentState.points, pos] }));
             return;
         }
 
@@ -264,10 +292,12 @@ export const useCanvasState = (selectedProfile) => {
 
             // Finde die beste Position, um den neuen Punkt einzufügen
             const insertIndex = findBestInsertionIndex(points, pos);
-            const newPoints = [...points];
-            newPoints.splice(insertIndex, 0, pos);
             
-            setPoints(newPoints);
+            updateState(currentState => {
+                const newPoints = [...currentState.points];
+                newPoints.splice(insertIndex, 0, pos);
+                return { ...currentState, points: newPoints };
+            });
             
             // Update locked edges and angles indices nach dem Einfügen
             updateLockedIndicesAfterInsertion(insertIndex);
@@ -322,12 +352,12 @@ export const useCanvasState = (selectedProfile) => {
     };
 
     const handleHauswandSetzen = (edgeIndex) => {
-        setHauswandEdges([edgeIndex]);
+        updateState(currentState => ({ ...currentState, hauswandEdges: [edgeIndex] }));
         setHoveredEdgeIndex(null);
     };
 
     const handleClearHauswand = () => {
-        setHauswandEdges([]);
+        updateState(currentState => ({ ...currentState, hauswandEdges: [] }));
     };
 
     const handleLengthClick = (edgeIndex, currentLength) => {
@@ -405,8 +435,12 @@ export const useCanvasState = (selectedProfile) => {
             }
         }
 
-        setPoints(newPoints);
-        setLockedEdges(prev => new Set([...prev, edgeIndex]));
+        updateState(currentState => {
+            const newLockedEdges = new Set(currentState.lockedEdges);
+            newLockedEdges.add(edgeIndex);
+            return { ...currentState, points: newPoints, lockedEdges: newLockedEdges };
+        });
+
         setEditingEdge(null);
         setEditingLength('');
     };
@@ -513,8 +547,12 @@ export const useCanvasState = (selectedProfile) => {
             };
         }
 
-        setPoints(newPoints);
-        setLockedAngles(prev => new Set([...prev, angleIndex]));
+        updateState(currentState => {
+            const newLockedAngles = new Set(currentState.lockedAngles);
+            newLockedAngles.add(angleIndex);
+            return { ...currentState, points: newPoints, lockedAngles: newLockedAngles };
+        });
+
         setEditingAngle(null);
         setEditingAngleValue('');
     };
@@ -530,18 +568,18 @@ export const useCanvasState = (selectedProfile) => {
     };
 
     const handleUnlockEdge = (edgeIndex) => {
-        setLockedEdges(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(edgeIndex);
-            return newSet;
+        updateState(currentState => {
+            const newLockedEdges = new Set(currentState.lockedEdges);
+            newLockedEdges.delete(edgeIndex);
+            return { ...currentState, lockedEdges: newLockedEdges };
         });
     };
 
     const handleUnlockAngle = (angleIndex) => {
-        setLockedAngles(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(angleIndex);
-            return newSet;
+        updateState(currentState => {
+            const newLockedAngles = new Set(currentState.lockedAngles);
+            newLockedAngles.delete(angleIndex);
+            return { ...currentState, lockedAngles: newLockedAngles };
         });
     };
 
@@ -552,45 +590,71 @@ export const useCanvasState = (selectedProfile) => {
             return;
         }
 
-        const newPoints = points.filter((_, index) => index !== pointIndex);
-        setPoints(newPoints);
+        updateState(currentState => {
+            const { points, lockedEdges, lockedAngles, hauswandEdges } = currentState;
+            const newPoints = points.filter((_, index) => index !== pointIndex);
+
+            const newLockedEdges = new Set();
+            lockedEdges.forEach(edgeIndex => {
+                if (edgeIndex < pointIndex) newLockedEdges.add(edgeIndex);
+                else if (edgeIndex > pointIndex) newLockedEdges.add(edgeIndex - 1);
+            });
+
+            const newLockedAngles = new Set();
+            lockedAngles.forEach(angleIndex => {
+                if (angleIndex < pointIndex) newLockedAngles.add(angleIndex);
+                else if (angleIndex > pointIndex) newLockedAngles.add(angleIndex - 1);
+            });
+
+            const newHauswandEdges = hauswandEdges
+                .map(edgeIndex => {
+                    if (edgeIndex < pointIndex) return edgeIndex;
+                    if (edgeIndex > pointIndex) return edgeIndex - 1;
+                    return -1;
+                })
+                .filter(edgeIndex => edgeIndex !== -1);
+
+            return { points: newPoints, lockedEdges: newLockedEdges, lockedAngles: newLockedAngles, hauswandEdges: newHauswandEdges };
+        });
+
         handleCloseContextMenu(); // Close context menu after deleting
-
-        const newLockedEdges = new Set();
-        lockedEdges.forEach(edgeIndex => {
-            if (edgeIndex < pointIndex) newLockedEdges.add(edgeIndex);
-            else if (edgeIndex > pointIndex) newLockedEdges.add(edgeIndex - 1);
-        });
-        setLockedEdges(newLockedEdges);
-
-        const newLockedAngles = new Set();
-        lockedAngles.forEach(angleIndex => {
-            if (angleIndex < pointIndex) newLockedAngles.add(angleIndex);
-            else if (angleIndex > pointIndex) newLockedAngles.add(angleIndex - 1);
-        });
-        setLockedAngles(newLockedAngles);
-
-        const newHauswandEdges = hauswandEdges
-            .map(edgeIndex => {
-                if (edgeIndex < pointIndex) return edgeIndex;
-                if (edgeIndex > pointIndex) return edgeIndex - 1;
-                return -1;
-            })
-            .filter(edgeIndex => edgeIndex !== -1);
-        setHauswandEdges(newHauswandEdges);
     };
 
     const handleUndo = () => {
-        if (isDrawing && points.length > 0) {
-            setPoints(points.slice(0, -1));
+        if (history.length > 0) {
+            const lastState = history[history.length - 1];
+            setRedoStack(prev => [...prev, { points, lockedEdges, lockedAngles, hauswandEdges }]);
+            setHistory(history.slice(0, -1));
+
+            setPoints(lastState.points);
+            setLockedEdges(lastState.lockedEdges);
+            setLockedAngles(lastState.lockedAngles);
+            setHauswandEdges(lastState.hauswandEdges);
+        }
+    };
+
+    const handleRedo = () => {
+        if (redoStack.length > 0) {
+            const nextState = redoStack[redoStack.length - 1];
+            setHistory(prev => [...prev, { points, lockedEdges, lockedAngles, hauswandEdges }]);
+            setRedoStack(redoStack.slice(0, -1));
+
+            setPoints(nextState.points);
+            setLockedEdges(nextState.lockedEdges);
+            setLockedAngles(nextState.lockedAngles);
+            setHauswandEdges(nextState.hauswandEdges);
         }
     };
 
     const handleClearAllPoints = () => {
-        setPoints([]);
-        setLockedEdges(new Set());
-        setLockedAngles(new Set());
-        setHauswandEdges([]);
+        updateState(() => ({
+            points: [],
+            lockedEdges: new Set(),
+            lockedAngles: new Set(),
+            hauswandEdges: []
+        }));
+        setHistory([]);
+        setRedoStack([]);
         setIsDrawing(true);
         setIsEditing(false);
     };
@@ -712,12 +776,20 @@ export const useCanvasState = (selectedProfile) => {
 
         e.target.position(newPos);
         const newPoints = points.map((p, i) => (i === idx ? newPos : p));
-        setPoints(newPoints);
+        setPoints(newPoints); // Direct update, history is handled on drag end
     };
 
     const handleDragEnd = (e, idx) => {
         setSnapLines([]);
         setDragInfo(null);
+
+        // Finalize position and update history
+        const finalPosition = e.target.position();
+        updateState(currentState => {
+            const newPoints = currentState.points.map((p, i) => (i === idx ? finalPosition : p));
+            return { ...currentState, points: newPoints };
+        });
+
         dragStartPoints.current = null;
     };
 
@@ -784,6 +856,8 @@ export const useCanvasState = (selectedProfile) => {
         setShowProfiles,
         contextMenu,
         dragInfo,
+        history,
+        redoStack,
 
         // Handlers
         handleStageClick,
@@ -802,6 +876,7 @@ export const useCanvasState = (selectedProfile) => {
         handleDeletePoint,
         handleClearAllPoints,
         handleUndo,
+        handleRedo,
         handleDragStart,
         handleDragMove,
         handleDragEnd,

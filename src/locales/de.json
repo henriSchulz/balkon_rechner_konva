@@ -28,7 +28,8 @@
   "drawingControls.title": "Zeichenwerkzeuge",
   "drawingControls.newDrawing": "Neue Zeichnung",
   "drawingControls.undo": "Rückgängig",
-  "drawingControls.finishDrawing": "Zeichnung beenden",
+  "drawingControls.redo": "Wiederholen",
+  "drawingControls.finishDrawing": "Zeichnung fertigstellen",
 
   "editingControls.title": "Bearbeitungsmodus",
   "editingControls.finishEditing": "Bearbeitung beenden",
