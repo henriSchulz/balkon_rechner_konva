@@ -36,7 +36,7 @@ const ShoppingList = ({ profileData, selectedProfile, setSelectedProfile }) => {
         }
 
         // Suche zuerst nach einer Produktvariation, die sowohl zur Länge passt als auch zur ausgewählten Farbe
-        const product = PRODUCTS[selectedProfile].find(p => p.length === parseInt(length) && p.color === selectedColor);
+        const product = PRODUCTS[selectedProfile].find(p => p.length == parseInt(length) && p.color === selectedColor);
 
         console.log(`🔍 Gesucht: ${length}mm in Farbe ${selectedColor}, Gefunden:`, product);
 
