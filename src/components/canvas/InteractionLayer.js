@@ -141,10 +141,12 @@ const InteractionLayer = ({
               );
             }
 
+            const liveLengthInMM = Math.round(liveLength * 1000);
+
             return (
               <>
                 <Line points={[lastPoint.x, lastPoint.y, cursorPos.x, cursorPos.y]} stroke="#CF2B32" strokeWidth={1.5} dash={[6, 4]} />
-                <Text x={midPoint.x} y={midPoint.y} text={`${liveLength.toFixed(2)} m`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
+                <Text x={midPoint.x} y={midPoint.y} text={`${liveLengthInMM} mm`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
                 {points.length > 1 && angleDisplayGroup}
               </>
             );
@@ -210,7 +212,7 @@ const InteractionLayer = ({
                     y={textY}
                     text={isAngleLocked ? `🔒${angles[i]}°` : (!isAngleEditable ? `🚫${angles[i]}°` : `${angles[i]}°`)}
                     fontSize={10}
-                    fill={isAngleLocked ? "#666" : (!isAngleEditable ? "white" : "#9c27b0")}
+                    fill={isAngleLocked ? "#333" : (!isAngleEditable ? "#A00" : "#0000FF")}
                     fontFamily="Arial, sans-serif"
                     fontStyle="bold"
                     offsetX={18}
