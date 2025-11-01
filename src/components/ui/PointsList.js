@@ -26,7 +26,7 @@ const PointsList = ({ points, scale, handleDeletePoint, handleClearAllPoints, is
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{t('pointsList.corner')} {index + 1}</div>
                 <div className="text-gray-600 text-xs">
-                  x: {pixelsToMeters(point.x, scale)}m, y: {pixelsToMeters(point.y, scale)}m
+                  x: {Math.round(pixelsToMeters(point.x, scale) * 1000)}mm, y: {Math.round(pixelsToMeters(point.y, scale) * 1000)}mm
                 </div>
               </div>
               <button

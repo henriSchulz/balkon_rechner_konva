@@ -49,10 +49,10 @@
   "shoppingList.warningAlert": "Warning: {failedAdds} of {totalAdds} profiles could not be added. See browser console for details.",
 
   "editingModals.edge.title": "Edit length",
-  "editingModals.edge.label": "Length in m",
+  "editingModals.edge.label": "Length in mm",
   "editingModals.edge.confirm": "OK",
   "editingModals.edge.cancel": "Cancel",
-  "editingModals.edge.unit": "m",
+  "editingModals.edge.unit": "mm",
 
   "editingModals.angle.title": "Edit angle",
   "editingModals.angle.label": "Angle in degrees",

@@ -112,7 +112,7 @@ export const useCanvasState = (selectedProfile) => {
             // Live-Länge berechnen
             const lengthInPixels = getDistance(lastPoint, cursorPos);
             const lengthInMeters = lengthInPixels / scale;
-            setLiveLength(lengthInMeters);
+            setLiveLength(lengthInMeters * 1000); // In mm umrechnen
 
             // Live-Winkel berechnen
             if (points.length > 1) {
@@ -362,7 +362,7 @@ export const useCanvasState = (selectedProfile) => {
 
     const handleLengthClick = (edgeIndex, currentLength) => {
         setEditingEdge(edgeIndex);
-        setEditingLength(currentLength);
+        setEditingLength(currentLength); // currentLength ist jetzt in mm
     };
 
     const handleAngleClick = (angleIndex, currentAngle) => {
@@ -378,7 +378,8 @@ export const useCanvasState = (selectedProfile) => {
         const p1_idx = edgeIndex;
         const p2_idx = (edgeIndex + 1) % p_len;
 
-        const newDistancePixels = metersToPixels(parseFloat(newLength), scale);
+        // newLength ist in mm, in Pixel umrechnen
+        const newDistancePixels = (parseFloat(newLength) / 1000) * scale;
 
         let newPoints = [...points];
         const updatePoint = (index, newPos) => {

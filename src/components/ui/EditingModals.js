@@ -52,8 +52,8 @@ const EditingModals = ({
               type="number"
               value={editingLength}
               onChange={(e) => setEditingLength(e.target.value)}
-              step="0.1"
-              min="0.1"
+              step="10"
+              min="1"
               className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-accent/80 focus:border-transparent"
               autoFocus
               onKeyPress={(e) => {

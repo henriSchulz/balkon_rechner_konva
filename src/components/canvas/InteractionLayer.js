@@ -144,7 +144,7 @@ const InteractionLayer = ({
             return (
               <>
                 <Line points={[lastPoint.x, lastPoint.y, cursorPos.x, cursorPos.y]} stroke="#CF2B32" strokeWidth={1.5} dash={[6, 4]} />
-                <Text x={midPoint.x} y={midPoint.y} text={`${liveLength.toFixed(2)} m`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
+                <Text x={midPoint.x} y={midPoint.y} text={`${Math.round(liveLength)} mm`} fontSize={12} fill="#333" padding={4} backgroundColor="rgba(255, 255, 255, 0.85)" cornerRadius={4} rotation={textRotation} offsetX={15} offsetY={15} />
                 {points.length > 1 && angleDisplayGroup}
               </>
             );

@@ -42,14 +42,14 @@ const PolygonLayer = ({
         const midY = (point.y + nextPoint.y) / 2;
         const distance = getDistance(point, nextPoint);
         const lengthInMeters = pixelsToMeters(distance, scale);
+        const lengthInMM = Math.round(parseFloat(lengthInMeters) * 1000);
 
         const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x);
         const degrees = (angle * 180) / Math.PI;
         const normalizedAngle = degrees > 90 || degrees < -90 ? degrees + 180 : degrees;
 
         const offsetDistance = 15;
-        // ÄNDERUNG: + Math.PI / 2 zu - Math.PI / 2 geändert, um die Labels nach außen zu verschieben
-        const perpAngle = angle - Math.PI / 2; 
+        const perpAngle = angle - Math.PI / 2; // Position outside
         const textX = midX + Math.cos(perpAngle) * offsetDistance;
         const textY = midY + Math.sin(perpAngle) * offsetDistance;
 
@@ -79,7 +79,7 @@ const PolygonLayer = ({
                   if (isEditing) {
                     e.evt.stopPropagation();
                     if (isLocked) handleUnlockEdge(i);
-                    else if (isEditable) handleLengthClick(i, lengthInMeters);
+                    else if (isEditable) handleLengthClick(i, lengthInMM); // Pass lengthInMM
                   }
                 }}
               >
@@ -91,7 +91,7 @@ const PolygonLayer = ({
                   cornerRadius={7}
                 />
                 <Text
-                  text={isLocked ? `🔒${lengthInMeters}m` : (!isEditable ? `🚫${lengthInMeters}m` : `${lengthInMeters}m`)}
+                  text={isLocked ? `🔒${lengthInMM}mm` : (!isEditable ? `🚫${lengthInMM}mm` : `${lengthInMM}mm`)}
                   fontSize={10}
                   fill={isLocked ? "#666" : (!isEditable ? "white" : (isEditing ? "#333" : "#888"))}
                   offsetX={isLocked ? 22 : (!isEditable ? 22 : 18)}

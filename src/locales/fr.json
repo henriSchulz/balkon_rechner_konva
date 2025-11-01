@@ -49,10 +49,10 @@
   "shoppingList.warningAlert": "Avertissement : {failedAdds} des {totalAdds} profilés n'ont pas pu être ajoutés. Voir la console du navigateur pour plus de détails.",
 
   "editingModals.edge.title": "Modifier la longueur",
-  "editingModals.edge.label": "Longueur en m",
+  "editingModals.edge.label": "Longueur en mm",
   "editingModals.edge.confirm": "OK",
   "editingModals.edge.cancel": "Annuler",
-  "editingModals.edge.unit": "m",
+  "editingModals.edge.unit": "mm",
 
   "editingModals.angle.title": "Modifier l'angle",
   "editingModals.angle.label": "Angle en degrés",
