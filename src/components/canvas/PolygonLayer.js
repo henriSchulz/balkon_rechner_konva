@@ -48,7 +48,8 @@ const PolygonLayer = ({
         const normalizedAngle = degrees > 90 || degrees < -90 ? degrees + 180 : degrees;
 
         const offsetDistance = 15;
-        const perpAngle = angle + Math.PI / 2;
+        // ÄNDERUNG: + Math.PI / 2 zu - Math.PI / 2 geändert, um die Labels nach außen zu verschieben
+        const perpAngle = angle - Math.PI / 2; 
         const textX = midX + Math.cos(perpAngle) * offsetDistance;
         const textY = midY + Math.sin(perpAngle) * offsetDistance;
 
