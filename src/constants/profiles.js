@@ -9,7 +9,7 @@ export const BODENPROFIL_BREITE_MM = {
 };
 
 // Regel IV: Zwingend einzuhaltender Randabstand
-export const RANDABSTAND_MM = 10;
+export const RANDABSTAND_MM = 0;
 
 // NEU: Zwingender Überstand (Verschnitt) für schräge Kanten
 export const ZUSCHNITT_TOLERANZ_MM = 2;

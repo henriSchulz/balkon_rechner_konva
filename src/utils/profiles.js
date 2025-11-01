@@ -69,7 +69,10 @@ export const calculateProfiles = (
 
       // Prüfe, ob die Y-Koordinate die Kante schneidet
       if ((y1 < y && y2 >= y) || (y2 < y && y1 >= y)) {
-        intersections.push(x_at_y(p1, p2, y));
+        // Ignoriere horizontale Kanten, die exakt auf y liegen (außer Start/Ende)
+        if (Math.abs(y1 - y2) > 1e-9 || (Math.abs(y - y1) < 1e-9 && Math.abs(y - y2) < 1e-9)) {
+           intersections.push(x_at_y(p1, p2, y));
+        }
       }
     }
     intersections.sort((a, b) => a - b);
@@ -90,16 +93,23 @@ export const calculateProfiles = (
   for (let i = 0; i < totalProfilRows; i++) {
     const y_start_rot = minY_rot + i * profilBreitePx;
     const y_end_rot = y_start_rot + profilBreitePx;
-    const y_mid_rot = y_start_rot + profilBreitePx / 2;
+
+    // --- KORRIGIERTE LOGIK ---
+    // Stelle sicher, dass der Prüfpunkt (y_mid_rot) innerhalb der
+    // Polygon-Grenzen (minY_rot bis maxY_rot) liegt.
+    // Für die letzte Diele nehmen wir die Mitte zwischen dem Start
+    // und dem tatsächlichen Ende des Polygons (maxY_rot).
+    const effective_y_end = Math.min(y_end_rot, maxY_rot);
+    const y_mid_rot = (y_start_rot + effective_y_end) / 2;
+    // --- KORREKTUR ENDE ---
+
 
     // --- MODIFIZIERTE LOGIK: Finde Segmente an Start, Mitte und Ende ---
-    // Wir verwenden die Segmente in der Mitte als Referenz, da dies
-    // am stabilsten gegen Eckpunkte ist.
     const segments_mid = getSegmentsAtY(y_mid_rot);
     if (segments_mid.length === 0) continue;
 
     const segments_start = getSegmentsAtY(y_start_rot);
-    const segments_end = getSegmentsAtY(y_end_rot);
+    const segments_end = getSegmentsAtY(effective_y_end); // Benutze effective_y_end
     
     // Verarbeite jedes Segment (wichtig für Löcher)
     for (const mid_segment of segments_mid) {
@@ -157,15 +167,15 @@ export const calculateProfiles = (
         const corners_full_rot = [
           [startX_full_rot, y_start_rot],
           [endX_used_rot, y_start_rot],
-          [endX_used_rot, y_end_rot],
+          [endX_used_rot, y_end_rot], // Die volle Diele wird bis y_end_rot gezeichnet
           [startX_full_rot, y_end_rot],
         ];
 
         const corners_used_rot = [
           [startX_used_rot, y_start_rot],
           [endX_used_rot, y_start_rot],
-          [endX_used_rot, y_end_rot],
-          [startX_used_rot, y_end_rot],
+          [endX_used_rot, effective_y_end], // Der genutzte Teil geht nur bis effective_y_end
+          [startX_used_rot, effective_y_end],
         ];
 
         const inverseRotationAngle = -rotationAngle;
