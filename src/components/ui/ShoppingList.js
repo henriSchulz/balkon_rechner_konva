@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { addToCart, COLORS, PRODUCTS } from '../../utils/api';
 import { useLocalization } from '../../hooks/useLocalization';
 
+
+function capitalizeFirstLetter(val) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
 const ShoppingList = ({ profileData, selectedProfile, setSelectedProfile }) => {
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
@@ -129,8 +134,8 @@ const ShoppingList = ({ profileData, selectedProfile, setSelectedProfile }) => {
 <div className="mb-4">
 
   <select onChange={e => setSelectedColor(e.target.value)} value={selectedColor} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md">
-    {COLORS.map(color => (
-      <option key={color} value={color}>{color}</option>
+    {COLORS.filter(color => !color.includes("natur")).map(color => (
+      <option key={color} value={color}>{color.split("-").map(capitalizeFirstLetter).join(" ")}</option>
     ))}
   </select>
 
